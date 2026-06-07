@@ -13,7 +13,11 @@ files, generates DX7 voice sheets, and integrates MIDI control.
 - **FTP Explorer** – Browse and manage `/SD` on the Raspberry Pi, copy/move
   performances, create/rename/delete banks.
 - **Workflow** – One‑click import from RPi → convert → export (RPi, GitHub, Dexed).
-- During conversion, every performance is scanned for its VoiceData. Identical voices are recognised and stored only once in standard 32‑voice DX7 Sysex banks. The original performance files are updated so that each TG‘s BankNumber and VoiceNumber point to the correct slot – no manual tuning needed.
+- **Voice Deduplication & Sysex Export** – During conversion, every performance
+  is scanned for its VoiceData. Identical voices are recognised and stored only
+  once in standard 32‑voice DX7 Sysex banks. The original performance files are
+  updated so that each TG‘s BankNumber and VoiceNumber point to the correct slot
+  – no manual tuning needed.
 - **Soundplantage Update** – Download the latest official performances from the
   Soundplantage GitHub repo and synchronise selected banks with your RPi.
 - **Performance Editor** – Full TG editor (channel, volume, pan, FX sends, detune,
