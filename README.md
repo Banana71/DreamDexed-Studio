@@ -36,26 +36,14 @@ files, generates DX7 voice sheets, and integrates MIDI control.
 
 ## Requirements
 
-- Windows 7 or later (uses `tkinter`, `winmm` for MIDI)
+- Windows 7 or later – uses `tkinter` and the built‑in Windows Multimedia API
+  (`winmm`) for MIDI I/O. **No extra MIDI driver or library is needed.**
 - Python 3.9+ (tested with 3.11)
-- Python packages:
-  - `Pillow` – for the logo
-  - `reportlab` – for PDF generation
-  - `requests` – for downloading updates from GitHub
-- No additional MIDI libraries needed – MIDI I/O uses the Windows multimedia API
-  directly.
+- Required Python packages are listed in `requirements.txt`
 
 Install the dependencies:
 
-```markdown
-## Requirements
-
-- Python 3.9+ (tested with 3.11)
-- Required packages are listed in `requirements.txt`
-
-Install them with:
-
-
+```bash
 pip install -r requirements.txt
 ```
 
