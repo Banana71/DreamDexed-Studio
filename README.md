@@ -125,20 +125,20 @@ Most paths and options are saved in `config.ini` and `config.json`.
 ```
 
 ## Licence
-The source code of DreamDexed Studio is licensed under the MIT License.
-See LICENSE for details.
 
-The sound performances and DX7 voices (the .ini files and SysEx banks)
-provided by the project or by Soundplantage are free for personal use but
-may not be used commercially or redistributed in a way that allows others
-to profit from the original DX7 patches. The exact licence terms for the
-content will be added separately (e.g., CC BY‑NC 4.0).
+This repository contains two different types of works with separate licences:
 
-## Acknowledgements
-- miniDexed by probonopd & team
-- Dexed DX7 emulator
-- Soundplantage – the official DreamDexed performance library
+**Software (source code)**
+All Python files, GUI code, and scripts are licensed under the **MIT License**.
+See [LICENSE](LICENSE) for the full text.
 
-## Contributing
-Pull requests and suggestions are welcome. Please open an issue first to discuss
-what you would like to change.
+**Sound content (performances & voice patches)**
+The `.ini` performance files and `.syx` voice banks included in the
+`Soundplantage/`, `DX7 Cartridges/`, `Export/` and `Import/` folders are
+provided under the **DreamDexed Performance License (DPL)**.
+See [LICENSE-CONTENT.md](LICENSE-CONTENT.md) for details.
+
+In short:
+- The **software** may be freely used, modified, and redistributed.
+- The **performances** are free for any use, including commercial projects.
+- **Extracting and selling the isolated DX7 voice patches** is not permitted.
