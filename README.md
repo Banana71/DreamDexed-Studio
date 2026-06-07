@@ -130,7 +130,7 @@ This repository contains two different types of works with separate licences:
 
 **Software (source code)**
 All Python files, GUI code, and scripts are licensed under the **MIT License**.
-See [LICENSE](LICENSE) for the full text.
+See [LICENSE](LICENSE.txt) for the full text.
 
 **Sound content (performances & voice patches)**
 The `.ini` performance files and `.syx` voice banks included in the
