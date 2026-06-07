@@ -47,8 +47,16 @@ files, generates DX7 voice sheets, and integrates MIDI control.
 
 Install the dependencies:
 
-```bash
-pip install Pillow reportlab requests
+```markdown
+## Requirements
+
+- Python 3.9+ (tested with 3.11)
+- Required packages are listed in `requirements.txt`
+
+Install them with:
+
+
+pip install -r requirements.txt
 ```
 
 ## Quick Start
