@@ -134,7 +134,7 @@ See [LICENSE](LICENSE.txt) for the full text.
 
 **Sound content (performances & voice patches)**
 The `.ini` performance files and `.syx` voice banks included in the
-`Soundplantage/`, `DX7 Cartridges/`, `Export/` and `Import/` folders are
+`Soundplantage/`, `Export/` and `Import/` folders are
 provided under the **DreamDexed Performance License (DPL)**.
 See [LICENSE-CONTENT.md](LICENSE-CONTENT.md) for details.
 
