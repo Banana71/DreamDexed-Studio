@@ -41,7 +41,7 @@ def scaled_font(base_size=9):
 # Farben & Schriften (Retro-Theme)
 # ----------------------------------------------------------------------
 COLOR_BG           = "#221d16"
-COLOR_FG           = "#48E0D0"
+COLOR_FG           = "#67fff0"   # "#48e0d0"
 COLOR_FG_DIM       = "#B0E7E2"
 COLOR_FG_WARN      = "#F59300"
 COLOR_BG_SELECT    = "#0E8585" 

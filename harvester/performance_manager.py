@@ -1,6 +1,6 @@
 # performance_manager.py
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk, messagebox, scrolledtext
 import ftplib
 import threading
 import io
@@ -264,7 +264,7 @@ class PerformanceManagerFrame(tk.Frame):
             full = os.path.join(path, item)
             if os.path.isdir(full):
                 dirs.append(item)
-            elif item.lower().endswith('.ini'):
+            else:
                 files.append(item)
         dirs.sort(key=str.lower)
         files.sort(key=str.lower)
@@ -274,7 +274,12 @@ class PerformanceManagerFrame(tk.Frame):
         for d in dirs:
             self.list_left.insert(tk.END, f"📁 {d}")
         for f in files:
-            self.list_left.insert(tk.END, f"📄 {f}")
+            if f.lower().endswith('.ini'):
+                self.list_left.insert(tk.END, f"📄 {f}")
+            elif f.lower().endswith('.txt'):
+                self.list_left.insert(tk.END, f"📝 {f}")
+            else:
+                self.list_left.insert(tk.END, f"📎 {f}")
 
         if path == self.pc_base_path:
             display = ".\\"
@@ -331,11 +336,13 @@ class PerformanceManagerFrame(tk.Frame):
             if os.path.isdir(new_path):
                 self.pc_current_path = new_path
                 self.load_left()
-        elif item.startswith("📄 "):
+        elif item.startswith("📄 ") or item.startswith("📝 ") or item.startswith("📎 "):
             filename = item.split(" ", 1)[1]
             full_path = os.path.join(self.pc_current_path, filename)
             if filename.lower().endswith(".pdf"):
                 self.open_local_pdf(full_path)
+            elif filename.lower().endswith(".txt"):
+                self.open_local_text_file(full_path)
 
     def open_remote_pdf(self, remote_dir, filename):
         import tempfile, platform, subprocess
@@ -376,6 +383,36 @@ class PerformanceManagerFrame(tk.Frame):
             self.log(f"📄 Opened local PDF: {filepath}")
         except Exception as e:
             self.log(f"❌ Could not open PDF: {e}")
+
+    def open_local_text_file(self, filepath):
+        """Open a local .txt file in a read-only text viewer window."""
+        try:
+            with open(filepath, 'r', encoding='utf-8', errors='replace') as f:
+                content = f.read()
+        except Exception as e:
+            self.log(f"❌ Could not open text file: {e}")
+            return
+
+        win = tk.Toplevel(self)
+        win.title(f"Text Viewer - {os.path.basename(filepath)}")
+        win.geometry("600x800")
+        win.configure(bg=COLOR_BG)
+
+        text_widget = scrolledtext.ScrolledText(
+            win, wrap=tk.WORD, font=("Courier New", 10),
+            bg=COLOR_BG, fg=COLOR_FG, insertbackground=COLOR_FG
+        )
+        text_widget.pack(fill="both", expand=True, padx=10, pady=10)
+        text_widget.insert(tk.END, content)
+        text_widget.config(state=tk.DISABLED)
+
+        btn_close = tk.Button(
+            win, text="Close", command=win.destroy,
+            bg=COLOR_BG_BUTTON, fg=COLOR_FG,
+            activebackground=COLOR_BG_SELECT, activeforeground=COLOR_FG,
+            font=FONT_NORMAL, relief="raised", cursor="hand2"
+        )
+        btn_close.pack(pady=10)
 
     # --- F3 ---
     def cmd_copy_f3(self, event=None):

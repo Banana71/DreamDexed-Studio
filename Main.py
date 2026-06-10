@@ -33,6 +33,7 @@ from harvester.chord_scanner import ChordScanner
 from harvester.midi_utils import list_midi_out_devices, send_bank_and_program, winmm
 from harvester.minidexed_ini import parse_minidexed_ini
 from harvester.midi_utils import list_midi_out_devices, send_bank_and_program, winmm, send_sysex
+from harvester.about_dialog import show_about
 
 if getattr(sys, 'frozen', False):
     BASE_DIR = os.path.dirname(sys.executable)
@@ -135,6 +136,7 @@ class Harvester(tk.Tk):
         self.midi_handle = None             # open MIDI output handle
         self.prog_buffer = ""               # program change buffer
         self.active_nav_pressed = set()     # currently pressed keycodes
+        self._nav_logged_active = False
         self._chord_scanner_ready = False
         self._midi_nav_status_reported = False
         self._system_check_done = False
@@ -468,6 +470,7 @@ class Harvester(tk.Tk):
             self.logo_image_tk = ImageTk.PhotoImage(pil_image)
             self.lbl_logo = tk.Label(toggle_frame, image=self.logo_image_tk, bg=COLOR_BG)
             self.lbl_logo.pack(side="right", padx=10, pady=2)
+            self.lbl_logo.bind("<Button-1>", lambda e: show_about(self, BASE_DIR))
 
         # Container für die Inhalte (wird ein-/ausgeklappt)
         self.config_content = tk.Frame(self.config_frame, bg=COLOR_BG)
@@ -664,11 +667,11 @@ class Harvester(tk.Tk):
         self.export_github_var = tk.BooleanVar(value=True)
         cb_rpi = tk.Checkbutton(export_check_frame, text="RPi", variable=self.export_rpi_var,
                                 bg=COLOR_BG, fg=COLOR_FG, selectcolor=COLOR_BG,
-                                activebackground=COLOR_BG, font=FONT_SMALL)
+                                activebackground=COLOR_BG, font=FONT_NORMAL)
         cb_rpi.pack(side="left", padx=2)
         cb_github = tk.Checkbutton(export_check_frame, text="GitHub & Dexed", variable=self.export_github_var,
                                    bg=COLOR_BG, fg=COLOR_FG, selectcolor=COLOR_BG,
-                                   activebackground=COLOR_BG, font=FONT_SMALL)
+                                   activebackground=COLOR_BG, font=FONT_NORMAL)
         cb_github.pack(side="left", padx=2)
 
         # Main workflow (1→2→3)
@@ -746,9 +749,9 @@ class Harvester(tk.Tk):
         lbl_log = tk.Label(header_frame, text="Log", font=FONT_BOLD, bg=COLOR_BG, fg=COLOR_FG, anchor="w")
         lbl_log.pack(side="left", anchor="s")
 
-        # Akkord-Anzeige direkt im header_frame (gleiche Zeile wie "Log")
+        # Akkord-Anzeige 
         chord_frame = tk.Frame(header_frame, bg=COLOR_BG_CHORD,
-                               highlightthickness=1) #, highlightbackground="white")
+                               highlightthickness=1) 
         chord_frame.pack(side="left", padx=164)  
 
         chord_font = (CHORD_FONT_FAMILY, int(CHORD_FONT_SIZE * self.scale), "bold")
@@ -1717,11 +1720,19 @@ class Harvester(tk.Tk):
             self._midi_nav_status_reported = True
             self._try_finish_system_check()
             return
+
+        already_open = self.midi_handle is not None
         self._open_midi_handle()
+
         if self.midi_handle is not None:
             self.bind("<KeyPress>", self._on_controller_key_press)
             self.bind("<KeyRelease>", self._on_controller_key_release)
-            self.log_message("MIDI button navigation activated.")
+            if not already_open:   # <-- Protokoll nur, wenn wirklich neu gestartet
+                self.log_message("MIDI button navigation activated.")
+            self._nav_logged_active = True
+        else:
+            self._nav_logged_active = False
+
         self._midi_nav_status_reported = True
         self._try_finish_system_check()
 
@@ -1730,6 +1741,7 @@ class Harvester(tk.Tk):
         self.unbind("<KeyPress>")
         self.unbind("<KeyRelease>")
         self._close_midi_handle()
+        self._nav_logged_active = False   # Reset, damit beim nächsten Start wieder geloggt wird
         self.log_message("MIDI button navigation deactivated.")
         self._midi_nav_status_reported = True
         self._try_finish_system_check()
