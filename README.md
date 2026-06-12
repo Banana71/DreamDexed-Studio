@@ -104,23 +104,26 @@ Most paths and options are saved in `config.ini` and `config.json`.
 ├── _backups/                   # Timestamped backups
 ├── DX7 Cartridges/             # Source folder for additional DX7 ROMs
 ├── harvester/                  # Application modules
-│   ├── constants.py
-│   ├── performance_manager.py
-│   ├── rename_dialog.py
-│   ├── update.py
-│   ├── Perf2syx.py
-│   ├── perf2sheet.py
-│   ├── PerfList_pdf_exp.py
-│   ├── DX7_Roms.py
+│   ├── about_dialog.py
 │   ├── chord_scanner.py
-│   ├── midi_utils.py
+│   ├── constants.py
+│   ├── dialogs.py
+│   ├── DX7_Roms.py
+│   ├── ftp_client.py
+│   ├── ftp_utils.py
+│   ├── ini_utils.py
 │   ├── midi_button_config_dialog.py
+│   ├── midi_utils.py
 │   ├── minidexed_ini.py
 │   ├── mixer_dialog.py
-│   ├── ftp_utils.py
-│   ├── dialogs.py
+│   ├── perf2sheet.py
+│   ├── Perf2syx.py
+│   ├── PerfList_pdf_exp.py
+│   ├── performance_manager.py
+│   ├── rename_dialog.py
+│   ├── soundplantage_update.py
 │   ├── status.py
-│   ├── ini_utils.py
+│   ├── update.py
 │   └── widgets.py
 └── harvester/logo.png
 ```
