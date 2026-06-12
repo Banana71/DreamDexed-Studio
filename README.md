@@ -116,6 +116,7 @@ Most paths and options are saved in `config.ini` and `config.json`.
 │   ├── midi_utils.py
 │   ├── midi_button_config_dialog.py
 │   ├── minidexed_ini.py
+│   ├── mixer_dialog.py
 │   ├── ftp_utils.py
 │   ├── dialogs.py
 │   ├── status.py
