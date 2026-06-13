@@ -16,7 +16,7 @@ def _status_thread(harvester):
     base = harvester.entry_base_path.get()
     perf_dir = os.path.join(base, PERF_IMPORT)
     if os.path.isdir(perf_dir):
-        harvester.log_message(" - Scanning local performances for INIT voices...")
+        harvester.log_message(f"- Scanning {os.path.normpath(perf_dir)} for INIT voices...")
         init_paths = []
         for root, dirs, files in os.walk(perf_dir):
             for file in files:
@@ -39,18 +39,18 @@ def _status_thread(harvester):
                 if has_init:
                     init_paths.append(rel_path)
         if init_paths:
-            harvester.log_message(f"INIT voices found in {len(init_paths)} performance(s):")
+            harvester.log_message(f"INIT voices found in {len(init_paths)} performances:")
             for p in init_paths:
                 harvester.log_message(f"  - {p}")
         else:
-            harvester.log_message("No performances with INIT voice found locally.")
+            harvester.log_message("No INIT voices found in local performances.")
     else:
-        harvester.log_message("Local performance folder not found.")
+        harvester.log_message("Local performance folder not found - skipping INIT scan.")
 
     # --- Remote‑Scan ---
     creds = harvester.get_active_ftp_creds()
     if creds:
-        harvester.log_message(f" - Scanning {harvester.get_current_profile_name()} for performance banks...")
+        harvester.log_message(f" - Scanning {harvester.get_current_profile_name()}...")
         try:
             def ftp_op(ftp):
                 # --- Sysex-Dateien zählen ---
@@ -60,11 +60,11 @@ def _status_thread(harvester):
                     ftp.retrlines('NLST', files.append)
                     syx_count = sum(1 for f in files if f.lower().endswith('.syx'))
                     if syx_count > 0:
-                        harvester.log_message(f"Sysex files in /sysex/voice/: {syx_count}")
+                        harvester.log_message(f"/SD/sysex/voice contains {syx_count} .syx files.")
                     else:
-                        harvester.log_message("No .syx files found in /sysex/voice/")
+                        harvester.log_message("No .syx files found in /SD/sysex/voice/")
                 except Exception:
-                    harvester.log_message("No sysex folder found on DreamDexed.")
+                    harvester.log_message(f"/SD/sysex/voice not found on {harvester.get_current_profile_name()}")
 
                 # --- Bank-Ordner analysieren (unverändert) ---
                 ftp.cwd("/SD/performance")
@@ -106,7 +106,7 @@ def _status_thread(harvester):
                         harvester.log_message(f"  Could not access bank {bank}: {e}")
 
                 if bank_infos:
-                    harvester.log_message("\n            - - - Bank Overview - - -")
+                    harvester.log_message("\n        - - - Performance Overview - - -")
                     for bank, count in bank_infos:
                         padding = int((20 - len(bank)) * 1.7)
                         spaces = " " * padding

@@ -730,10 +730,6 @@ class Harvester(tk.Tk):
         btn_update.pack(side="left", padx=5, ipady=2, ipadx=8)
         ToolTip(btn_update, "Download latest performances from Soundplantage GitHub and write to RPi")
 
-        btn_cleanup = tk.Button(tools_container, text="Delete RPi Backups", command=self.cmd_pi_cleanup, **btn_tools_base)
-        btn_cleanup.pack(side="left", padx=5, ipady=2, ipadx=8)
-        ToolTip(btn_cleanup, "Deletes performance backups on RPi.")
-
         btn_status = tk.Button(tools_container, text="Status", command=self.cmd_status, **btn_tools_base)
         btn_status.pack(side="left", padx=5, ipady=2, ipadx=8)
         ToolTip(btn_status, "Local INIT scan & remote bank overview.")
@@ -1143,10 +1139,10 @@ class Harvester(tk.Tk):
                     shutil.copytree(local_perf, backup_path)
                     self.log_message(f"Local backup created: {backup_path}")
 
-                # --- NEU: Komplettes Leeren des Import-Ordners nach Backup ---
                 if delete_all and os.path.exists(local_perf):
                     shutil.rmtree(local_perf)
-                    self.log_message("Import folder cleared after backup.")
+                    os.path.normpath(local_perf)
+                    self.log_message(f"{os.path.normpath(local_perf)} cleared")
 
                 for folder in selected_folders:
                     target_dir = os.path.join(local_perf, folder)
@@ -1187,123 +1183,14 @@ class Harvester(tk.Tk):
                                 ftp.retrbinary(f"RETR {file}", f.write)
                         ftp.cwd("..")
                         self.clear_progress()
-                        self.log_message(f"{folder} updated.")
+                        self.log_message(f"{folder} imported.")
                 safe_ftp_operation(creds, ftp_op, self.log_message)
-                self.log_message(f"{self.get_current_profile_name()} import finished.")
+                self.log_message(f"All selected folders imported from {self.get_current_profile_name()}.")
             except Exception as e:
                 self.log_message(f"FTP error during download: {e}")
             finally:
                 self.ftp_busy = False
         threading.Thread(target=download_task, daemon=True).start()
-    def cmd_pi_cleanup(self):
-        if self.ftp_busy:
-            self.log_message("Please wait, FTP is busy...")
-            return
-        creds = self.get_active_ftp_creds()
-        if not creds: return
-        self.ftp_busy = True
-        def fetch_task():
-            try:
-                def ftp_op(ftp):
-                    self.log_message(f"\n--- {self.get_current_profile_name()} Cleanup: Searching backups ({creds['ip']}) ---")
-                    ftp.cwd("/")
-                    try: ftp.cwd("SD")
-                    except: pass
-                    backup_folders = []
-                    def parse_line(line):
-                        line = line.strip()
-                        name = ""
-                        if "<DIR>" in line:
-                            name = line.split("<DIR>", 1)[1].strip()
-                        elif line.startswith('d'):
-                            parts = line.split(maxsplit=8)
-                            if len(parts) == 9:
-                                name = parts[8].strip()
-                        else:
-                            name = line.strip()
-                        if name.startswith("performance_bu_"):
-                            backup_folders.append(name)
-                    ftp.retrlines('LIST', parse_line)
-                    return backup_folders
-                backup_folders = safe_ftp_operation(creds, ftp_op, self.log_message)
-                self.ftp_busy = False
-                if not backup_folders:
-                    self.log_message("No backup folders found on {self.get_current_profile_name()}.")
-                    return
-                from harvester.dialogs import PiCleanupDialog
-                self.after(0, lambda: PiCleanupDialog(self, backup_folders, self.execute_pi_cleanup))
-            except Exception as e:
-                self.log_message(f"FTP error during backup search: {e}")
-                self.ftp_busy = False
-        threading.Thread(target=fetch_task, daemon=True).start()
-
-    def execute_pi_cleanup(self, selected_folders):
-        if not selected_folders:
-            self.log_message("Cleanup cancelled or no folders selected.")
-            return
-        creds = self.get_active_ftp_creds()
-        self.ftp_busy = True
-        def delete_task():
-            try:
-                def ftp_op(ftp):
-                    ftp.cwd("/")
-                    try: ftp.cwd("SD")
-                    except: pass
-                    for main_folder in selected_folders:
-                        self.log_message(f"Deleting backup: {main_folder}")
-                        try:
-                            ftp.cwd(main_folder)
-                            sub_folders = []
-                            def parse_sub(line):
-                                line = line.strip()
-                                name = ""
-                                if "<DIR>" in line: name = line.split("<DIR>", 1)[1].strip()
-                                elif line.startswith('d'):
-                                    parts = line.split(maxsplit=8)
-                                    if len(parts) == 9: name = parts[8].strip()
-                                if name and name not in [".", ".."]:
-                                    sub_folders.append(name)
-                            ftp.retrlines('LIST', parse_sub)
-                            for sub in sub_folders:
-                                try:
-                                    ftp.cwd(sub)
-                                    files = []
-                                    def parse_files(line):
-                                        line = line.strip()
-                                        if "<DIR>" not in line and not line.startswith('d'):
-                                            if line.startswith('-'):
-                                                parts = line.split(maxsplit=8)
-                                                if len(parts) == 9: files.append(parts[8].strip())
-                                            else:
-                                                parts = line.split(maxsplit=3)
-                                                if len(parts) == 4: files.append(parts[3].strip())
-                                                else: files.append(line.split()[-1])
-                                    ftp.retrlines('LIST', parse_files)
-                                    for f in files:
-                                        if f not in [".", ".."]:
-                                            self.log_progress(f"   Deleting file: {sub}/{f}")
-                                            ftp.delete(f)
-                                    ftp.cwd("..")
-                                    ftp.rmd(sub)
-                                except Exception:
-                                    ftp.delete(sub)
-                            ftp.cwd("..")
-                            ftp.rmd(main_folder)
-                            self.clear_progress()
-                            self.log_message(f"{main_folder} completely removed.")
-                        except Exception as e:
-                            self.log_message(f"Error deleting {main_folder}: {e}")
-                            ftp.cwd("/")
-                            try: ftp.cwd("SD")
-                            except: pass
-                    return None
-                safe_ftp_operation(creds, ftp_op, self.log_message)
-                self.log_message("RPi Cleanup fully completed.")
-            except Exception as e:
-                self.log_message(f"FTP error during deletion: {e}")
-            finally:
-                self.ftp_busy = False
-        threading.Thread(target=delete_task, daemon=True).start()
 
     def cmd_reboot_pi(self):
         if self.ftp_busy:
@@ -1584,10 +1471,8 @@ class Harvester(tk.Tk):
         Speichert sie im Cache und aktualisiert das UI.
         """
         if config is not None:
-            # Cache lokal ablegen
-            cache_dir = os.path.join(BASE_DIR, "_cache")
-            os.makedirs(cache_dir, exist_ok=True)
-            cache_file = os.path.join(cache_dir, "minidexed_config.json")
+            # Cache im Projekt‑Root ablegen (pc_key_navigation.json)
+            cache_file = os.path.join(BASE_DIR, "pc_key_navigation.json")
             try:
                 with open(cache_file, 'w', encoding='utf-8') as f:
                     json.dump(config, f, indent=4)
@@ -1596,7 +1481,7 @@ class Harvester(tk.Tk):
             self._apply_minidexed_config(config)
         else:
             # Fallback: Cache laden
-            cache_file = os.path.join(BASE_DIR, "_cache", "minidexed_config.json")
+            cache_file = os.path.join(BASE_DIR, "pc_key_navigation.json")
             if os.path.exists(cache_file):
                 try:
                     with open(cache_file, 'r', encoding='utf-8') as f:
@@ -1606,8 +1491,8 @@ class Harvester(tk.Tk):
                 except Exception:
                     self._apply_minidexed_config(None)
             else:
-                self._apply_minidexed_config(None)  
-    
+                self._apply_minidexed_config(None)
+
     def _apply_minidexed_config(self, config):
         self.minidexed_config = config
         if not config:

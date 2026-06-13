@@ -6,6 +6,7 @@ import threading
 import io
 import re
 import os
+import shutil
 import time
 import random
 from harvester.constants import *
@@ -167,7 +168,8 @@ class PerformanceManagerFrame(tk.Frame):
         self.list_left = tk.Listbox(left_frame, font=FONT_NORMAL, bg=COLOR_BG, fg=COLOR_FG,
                                     selectbackground=COLOR_BG_SELECT, selectforeground="white",
                                     activestyle="none", highlightthickness=2,
-                                    highlightbackground="gray", highlightcolor=COLOR_FG)
+                                    highlightbackground="gray", highlightcolor=COLOR_FG,
+                                    selectmode=tk.EXTENDED)
         self.list_left.pack(side="left", fill="both", expand=True)
         scroll_left = tk.Scrollbar(left_frame, orient="vertical", command=self.list_left.yview, bg=COLOR_BG)
         scroll_left.pack(side="right", fill="y")
@@ -992,6 +994,8 @@ class PerformanceManagerFrame(tk.Frame):
                 self.execute_reorder(old_idx, new_idx, old_filename, new_base_name)
 
     def on_left_drag_start(self, event):
+        if event.state & (0x0004 | 0x0001):
+            return
         idx = self.list_left.nearest(event.y)
         self.list_left.selection_clear(0, tk.END)
         self.list_left.selection_set(idx)
@@ -1094,11 +1098,178 @@ class PerformanceManagerFrame(tk.Frame):
         threading.Thread(target=task, daemon=True).start()
 
     def cmd_delete_left(self, event=None):
+        """Handle delete key in left listbox: .ini files or backup folders."""
         sel = self.list_left.curselection()
-        if not sel: return
-        item = self.list_left.get(sel[0])
-        if not item.startswith("📄 "): return
-        self.execute_delete(self.left_path, item.split(" ", 1)[1])
+        if not sel:
+            return
+
+        items = [self.list_left.get(i) for i in sel]
+        files = []
+        folders = []
+        for item in items:
+            if item.startswith("📄 "):
+                files.append(item.split(" ", 1)[1])
+            elif item.startswith("📁 ") and item != "📁 ..":
+                folders.append(item.split(" ", 1)[1])
+
+        # Mixed selection is not allowed – user must choose either files or folders
+        if files and folders:
+            messagebox.showwarning("Mixed selection",
+                                   "Please select either only files or only folders to delete.")
+            return
+
+        if files:
+            # Delete only .ini files (existing behaviour)
+            for fname in files:
+                if fname.lower().endswith('.ini'):
+                    self.ask_delete_confirm(fname, lambda f=fname: self.execute_delete(self.left_path, f))
+                else:
+                    messagebox.showwarning("Wrong file type", f"Only .ini files can be deleted: {fname}")
+            return
+
+        if folders:
+            # Validate that all selected folders are allowed backup folders
+            allowed = True
+            mode = self.source_mode.get()
+            if mode == "rpi":
+                # Allow only when in /SD (or root) and folder name starts with performance_bu_
+                if self.left_path != "/SD":
+                    allowed = False
+                else:
+                    for fname in folders:
+                        if not fname.startswith("performance_bu_"):
+                            allowed = False
+                            break
+            else:  # PC mode
+                backups_dir = os.path.join(self.pc_base_path, "_backups")
+                # Allow deletion anywhere inside _backups (including subfolders)
+                if not (os.path.isdir(backups_dir) and self.pc_current_path.startswith(backups_dir)):
+                    allowed = False
+                # No further name checks – any folder inside _backups is considered a backup
+
+            if not allowed:
+                messagebox.showwarning("Not allowed",
+                    "You can only delete backup folders.\n"
+                    "On the Pi, select 'performance_bu_*' folders inside /SD.\n"
+                    "On your PC, navigate into the '_backups' folder (or its subfolders).")
+                return
+
+            # Confirm and delete
+            self.confirm_delete_backup_folders(folders, lambda: self.delete_backup_folders_left(folders))
+            return
+
+    def confirm_delete_backup_folders(self, folder_names, callback):
+        """Show a confirmation dialog for multiple backup folders."""
+        dlg = tk.Toplevel(self)
+        dlg.withdraw()
+        dlg.title("Delete backup folders")
+        dlg.configure(bg=COLOR_BG)
+        dlg.grab_set()
+        dlg.transient(self)
+
+        tk.Label(dlg, text="Do you really want to delete these backup folders?",
+                 bg=COLOR_BG, fg=COLOR_FG, font=FONT_BOLD, wraplength=400).pack(pady=(30, 10))
+
+        listbox = tk.Listbox(dlg, font=FONT_NORMAL, bg=COLOR_BG, fg=COLOR_FG,
+                             selectbackground=COLOR_BG_SELECT, selectforeground="white",
+                             height=min(len(folder_names), 12))
+        listbox.pack(padx=20, fill="both", expand=True)
+        for name in folder_names:
+            listbox.insert(tk.END, name)
+
+        tk.Label(dlg, text="This action cannot be undone!", bg=COLOR_BG, fg=COLOR_FG_WARN,
+                 font=FONT_NORMAL).pack(pady=10)
+
+        btn_frame = tk.Frame(dlg, bg=COLOR_BG)
+        btn_frame.pack(fill="x", pady=(0, 30))
+        def on_yes():
+            dlg.destroy()
+            callback()
+        def on_no():
+            dlg.destroy()
+        tk.Button(btn_frame, text="Yes, delete", bg=COLOR_BG_BUTTON, fg=COLOR_FG_WARN,
+                  font=FONT_NORMAL, command=on_yes, cursor="hand2",
+                  activebackground="#442222").pack(side="left", padx=30)
+        tk.Button(btn_frame, text="Cancel", bg=COLOR_BG_BUTTON, fg=COLOR_FG,
+                  font=FONT_NORMAL, command=on_no, cursor="hand2",
+                  activebackground=COLOR_BG_SELECT).pack(side="right", padx=30)
+
+        w, h = 500, 250 + min(len(folder_names), 12) * 20
+        dlg.update_idletasks()
+        x = self.winfo_rootx() + (self.winfo_width() // 2) - (w // 2)
+        y = self.winfo_rooty() + (self.winfo_height() // 2) - (h // 2)
+        dlg.geometry(f"{w}x{h}+{x}+{y}")
+        dlg.deiconify()
+
+    def delete_backup_folders_left(self, folder_names):
+        """
+        Start deletion of multiple backup folders (local or remote).
+        Runs in a background thread if remote, otherwise local deletion
+        is done directly with a refresh.
+        """
+        mode = self.source_mode.get()
+        if mode == "rpi":
+            if self.harvester.ftp_busy:
+                self.log("⏳ FTP is busy, please wait...")
+                return
+            self.harvester.ftp_busy = True
+            threading.Thread(target=self._delete_remote_backup_folders,
+                             args=(folder_names,), daemon=True).start()
+        else:
+            # Local deletion – use the *current* PC path (which may be a subfolder of _backups)
+            for name in folder_names:
+                full_path = os.path.join(self.pc_current_path, name)
+                if os.path.isdir(full_path):
+                    try:
+                        shutil.rmtree(full_path)
+                        self.log(f"🗑️ Deleted local backup: {name}")
+                    except Exception as e:
+                        self.log(f"❌ Failed to delete {name}: {e}")
+            self.load_left()
+
+    def _delete_remote_backup_folders(self, folder_names):
+        """Thread target: delete remote backup folders sequentially."""
+        try:
+            for name in folder_names:
+                self.log(f"🗑️ Deleting remote folder: {self.left_path}/{name}")
+                self._delete_remote_folder(name)
+            self.after(0, self.load_left)
+        except Exception as e:
+            self.after(0, lambda m=str(e): messagebox.showerror("Error deleting", m))
+        finally:
+            self.harvester.ftp_busy = False
+
+    def _delete_remote_folder(self, folder_name):
+        """
+        Deletes a single remote folder (with all its contents) inside self.left_path.
+        Must be called with a valid FTP connection and ftp_busy already set.
+        """
+        def ftp_op(ftp):
+            ftp.cwd(self.left_path)
+            try:
+                ftp.cwd(folder_name)
+            except Exception as e:
+                raise Exception(f"Could not enter folder '{folder_name}': {e}")
+
+            # Delete all files inside
+            while True:
+                file_list = []
+                ftp.retrlines('NLST', file_list.append)
+                files = [f for f in file_list if f not in ('.', '..')]
+                if not files:
+                    break
+                for fname in files:
+                    try:
+                        ftp.delete(fname)
+                        self.log_progress(f"   Deleted file: {folder_name}/{fname}")
+                    except Exception as e:
+                        self.log(f"   ⚠️ Could not delete file '{fname}': {e}")
+            self.clear_progress()
+            ftp.cwd("..")
+            ftp.rmd(folder_name)
+            return f"Folder '{folder_name}' deleted."
+
+        safe_ftp_operation(self.creds, ftp_op, self.log)
 
     def cmd_delete_right(self, event=None):
         sel = self.tree_right.selection()
@@ -1582,3 +1753,145 @@ class PerformanceManagerFrame(tk.Frame):
                 self.harvester.ftp_busy = False
                 self._compacting = False
         threading.Thread(target=task, daemon=True).start()
+
+    def confirm_delete_backup_folders(self, folder_names, callback):
+        """Show a confirmation dialog for multiple backup folders."""
+        dlg = tk.Toplevel(self)
+        dlg.withdraw()
+        dlg.title("Delete backup folders")
+        dlg.configure(bg=COLOR_BG)
+        dlg.grab_set()
+        dlg.transient(self)
+
+        tk.Label(dlg, text="Do you really want to delete these backup folders?",
+                 bg=COLOR_BG, fg=COLOR_FG, font=FONT_BOLD, wraplength=400).pack(pady=(30, 10))
+
+        listbox = tk.Listbox(dlg, font=FONT_NORMAL, bg=COLOR_BG, fg=COLOR_FG,
+                             selectbackground=COLOR_BG_SELECT, selectforeground="white",
+                             height=min(len(folder_names), 12))
+        listbox.pack(padx=20, fill="both", expand=True)
+        for name in folder_names:
+            listbox.insert(tk.END, name)
+
+        tk.Label(dlg, text="This action cannot be undone!", bg=COLOR_BG, fg=COLOR_FG_WARN,
+                 font=FONT_NORMAL).pack(pady=10)
+
+        btn_frame = tk.Frame(dlg, bg=COLOR_BG)
+        btn_frame.pack(fill="x", pady=(0, 30))
+        def on_yes():
+            dlg.destroy()
+            callback()
+        def on_no():
+            dlg.destroy()
+        tk.Button(btn_frame, text="Yes, delete", bg=COLOR_BG_BUTTON, fg=COLOR_FG_WARN,
+                  font=FONT_NORMAL, command=on_yes, cursor="hand2",
+                  activebackground="#442222").pack(side="left", padx=30)
+        tk.Button(btn_frame, text="Cancel", bg=COLOR_BG_BUTTON, fg=COLOR_FG,
+                  font=FONT_NORMAL, command=on_no, cursor="hand2",
+                  activebackground=COLOR_BG_SELECT).pack(side="right", padx=30)
+
+        w, h = 500, 250 + min(len(folder_names), 12) * 20
+        dlg.update_idletasks()
+        x = self.winfo_rootx() + (self.winfo_width() // 2) - (w // 2)
+        y = self.winfo_rooty() + (self.winfo_height() // 2) - (h // 2)
+        dlg.geometry(f"{w}x{h}+{x}+{y}")
+        dlg.deiconify()
+
+    def delete_backup_folders_left(self, folder_names):
+        mode = self.source_mode.get()
+        if mode == "rpi":
+            if self.harvester.ftp_busy:
+                self.log("⏳ FTP is busy, please wait...")
+                return
+            self.harvester.ftp_busy = True
+            threading.Thread(target=self._delete_remote_backup_folders,
+                            args=(folder_names,), daemon=True).start()
+        else:
+            for name in folder_names:
+                full_path = os.path.join(self.pc_current_path, name)
+                if os.path.isdir(full_path):
+                    try:
+                        shutil.rmtree(full_path)
+                        self.log(f"🗑️ Deleted local backup: {name}")
+                    except Exception as e:
+                        self.log(f"❌ Failed to delete {name}: {e}")
+            self.load_left()
+
+    def _delete_remote_backup_folders(self, folder_names):
+        """Thread target: delete remote backup folders sequentially."""
+        try:
+            for name in folder_names:
+                self.log(f"🗑️ Deleting remote folder: {self.left_path}/{name}")
+                self._delete_remote_folder(name)
+            self.after(0, self.load_left)
+        except Exception as e:
+            self.after(0, lambda m=str(e): messagebox.showerror("Error deleting", m))
+        finally:
+            self.harvester.ftp_busy = False
+
+    def _delete_remote_folder(self, folder_name):
+        """
+        Recursively deletes a remote folder (with all files and subfolders)
+        inside self.left_path.
+        """
+        def ftp_op(ftp):
+            ftp.cwd(self.left_path)
+
+            def delete_recursive(current_dir):
+                """Recursively delete everything inside current_dir, then the directory itself."""
+                try:
+                    ftp.cwd(current_dir)
+                except Exception as e:
+                    raise Exception(f"Could not enter '{current_dir}': {e}")
+
+                # Parse LIST output to separate files and subdirectories
+                items = []
+                ftp.retrlines('LIST', items.append)
+                entries = []  # (name, is_dir)
+
+                for line in items:
+                    line = line.strip()
+                    name = ""
+                    is_dir = False
+                    if "<DIR>" in line:
+                        name = line.split("<DIR>", 1)[1].strip()
+                        is_dir = True
+                    elif line.startswith('d'):
+                        parts = line.split(maxsplit=8)
+                        if len(parts) == 9:
+                            name = parts[8].strip()
+                        is_dir = True
+                    elif line.startswith('-'):
+                        parts = line.split(maxsplit=8)
+                        if len(parts) == 9:
+                            name = parts[8].strip()
+                    else:
+                        parts = line.split(maxsplit=3)
+                        if len(parts) == 4 and "<DIR>" not in line:
+                            name = parts[3].strip()
+                        else:
+                            name = line.split()[-1]
+                    if name and name not in ('.', '..'):
+                        entries.append((name, is_dir))
+
+                # Delete subdirectories first (recursively)
+                for name, is_dir in entries:
+                    if is_dir:
+                        self.log_progress(f"   Deleting folder: {current_dir}/{name}")
+                        delete_recursive(name)
+                    else:
+                        try:
+                            ftp.delete(name)
+                            self.log_progress(f"   Deleted file: {current_dir}/{name}")
+                        except Exception as e:
+                            self.log(f"   ⚠️ Could not delete file '{name}': {e}")
+
+                # Go back up and remove the now‑empty directory
+                ftp.cwd('..')
+                ftp.rmd(current_dir)
+
+            delete_recursive(folder_name)
+            self.clear_progress()
+            return f"Folder '{folder_name}' deleted."
+
+        safe_ftp_operation(self.creds, ftp_op, self.log)  
