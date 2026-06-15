@@ -1768,7 +1768,6 @@ class Harvester(tk.Tk):
             return
         msg = 0xC0 | (channel - 1) | (program << 8)
         try:
-            self.log_message(f"DEBUG ProgChange: ch={channel}, prog={program}, handle={'ok' if self.midi_handle else 'None'}")
             winmm.midiOutShortMsg(self.midi_handle, msg)
         except Exception as e:
             self.log_message(f"MIDI Program Change error: {e}")
@@ -1785,7 +1784,6 @@ class Harvester(tk.Tk):
         lsb = bank & 0x7F
         cc_status = 0xB0 | (ch - 1)
         try:
-            self.log_message(f"DEBUG BankSelect: bank={bank}, ch={ch}, handle={'ok' if self.midi_handle else 'None'}")
             winmm.midiOutShortMsg(self.midi_handle, cc_status | (0 << 8) | (msb << 16))
             winmm.midiOutShortMsg(self.midi_handle, cc_status | (32 << 8) | (lsb << 16))
         except Exception as e:
