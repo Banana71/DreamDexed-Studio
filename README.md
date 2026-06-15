@@ -1,9 +1,11 @@
 # DreamDexed Studio – The Seed Manager
 
-A Python desktop application (tkinter) for managing performances and voices for
+A Windows desktop application (tkinter) for managing performances and voices for
 the **Raspberry Pi** running **Circle** and **miniDexed / DreamDexed**. It connects
 via FTP, offers an interactive explorer, imports/exports/converts performance
-files, generates DX7 voice sheets, and integrates MIDI control.
+files, generates DX7 voice sheets, and integrates MIDI control. 
+
+DreamDexed Studio is available both as a **standalone, portable Windows executable** (no installation required) and as a **Python project** for developers.
 
 <img width="1221" height="888" alt="DreamDexed Studio" src="https://github.com/user-attachments/assets/7cd18a21-94e3-4ede-ad3a-1c5763cb73a3" />
 
@@ -24,7 +26,7 @@ files, generates DX7 voice sheets, and integrates MIDI control.
   – no manual tuning needed.
 - **Soundplantage Update** – Download the latest official performances from the
   Soundplantage GitHub repo and synchronise selected banks with your RPi.
-- **Performance Editor** – Full TG editor (channel, volume, pan, FX sends, detune,
+- **Performance Editor** – Essential TG editor (channel, volume, pan, FX sends, detune,
   note limits, TG link), mixer overview, and voice sheet export.
 - **DX7 Voice Data Sheet Generator** – Parse any VoiceData and produce a printable
   Dexed‑style parameter sheet.
@@ -38,8 +40,13 @@ files, generates DX7 voice sheets, and integrates MIDI control.
   including automatic DX7 ROM integration.
 - **Dynamic GUI Scaling** – Adapts to screen height, configurable in 75–300 %.
 
-## Requirements
+## Requirements & installation
 
+### Option A: Portable Windows Version (Recommended)
+- Windows 7 or later.
+- **No dependencies required.** - Simply download the latest `DreamDexed-Studio.zip` from the Releases page, extract the archive, and run `DreamDexed-Studio.exe`.
+
+### Option B: Running from Source (Python)
 - Windows 7 or later – uses `tkinter` and the built‑in Windows Multimedia API
   (`winmm`) for MIDI I/O. **No extra MIDI driver or library is needed.**
 - Python 3.9+ (tested with 3.11)
@@ -53,20 +60,17 @@ pip install -r requirements.txt
 
 ## Quick Start
 
-1. **Clone the repository** and enter the project folder.
-2. Run `Main.py` with Python.
-3. In the **Device** dropdown, click **⚙️ Edit Profiles** to create an FTP
-   profile for your Raspberry Pi (IP, user, password; defaults: `admin`/`admin`).
-4. Select the profile → the Explorer on the right will connect and load the
-   Pi’s configuration (`minidexed.ini`).
-5. **Workflow**:
+1. **Launch the application**:
+   - **Portable:** Double-click `DreamDexed-Studio.exe`.
+   - **Source:** Run `Main.py` with Python.
+2. In the **Device** dropdown, click **⚙️ Edit Profiles** to create an FTP profile for your Raspberry Pi (IP, user, password; defaults: `admin`/`admin`).
+3. Select the profile → the Explorer on the right will connect and load the Pi’s configuration (`minidexed.ini`).
+4. **Workflow**:
    - Click **1. Import from RPi** – choose which banks to download.
    - Click **2. Convert** – extracts sysex, creates PDF, optionally adds DX7 ROMs.
-   - Click **3. Export** – uploads everything back to the RPi and/or syncs with
-     your local Dexed/GitHub folders.
-6. **Performance editing**:
-   - Right‑click an `.ini` file in the Explorer tree and choose **F2** or
-     double‑click to open the editor.
+   - Click **3. Export** – uploads everything back to the RPi and/or syncs with your local Dexed/GitHub folders.
+5. **Performance editing**:
+   - Right‑click an `.ini` file in the Explorer tree and choose **F2** or double‑click to open the editor.
    - Double‑right‑click to send a Program Change to the Pi.
 
 ## MIDI Button Navigation
