@@ -58,11 +58,23 @@ jobs:
           Get-ChildItem -Path $target -Include "*.py", "*.pyc" -Recurse | Remove-Item -Force
           Write-Host "Removed .py and .pyc files from harvester"
 
+      - name: Copy midi_button_config.json to base folder
+        shell: pwsh
+        run: |
+          $dest = "dist\DreamDexed-Studio\midi_button_config.json"
+          if (Test-Path "midi_button_config.json") {
+            Copy-Item "midi_button_config.json" $dest -Force
+            Write-Host "Copied existing midi_button_config.json"
+          } else {
+            # Leere Default-Konfiguration anlegen (leeres JSON-Objekt)
+            '{}' | Out-File -FilePath $dest -Encoding utf8
+            Write-Host "Created default midi_button_config.json"
+          }
+
       - name: Debug - list dist content
         run: dir dist\DreamDexed-Studio
 
-      # Ordner direkt als Artefakt hochladen (GitHub zippt automatisch)
-      - name: Upload artifact
+      - name: Upload artifact (entire folder)
         uses: actions/upload-artifact@v4
         with:
           name: DreamDexed-Studio
