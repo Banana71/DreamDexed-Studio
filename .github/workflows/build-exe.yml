@@ -73,19 +73,28 @@ jobs:
             Write-Host "Created default midi_button_config.json"
           }
 
-      - name: Debug - list dist content
-        run: dir dist\DreamDexed-Studio
+      # ---------- DIESEN ZIP-SCHRITT WIEDER EINFÜGEN ----------
+      - name: Zip the portable folder
+        shell: pwsh
+        run: |
+          $source = "dist\DreamDexed-Studio"
+          $dest   = "dist\DreamDexed-Studio.zip"
+          Compress-Archive -Path "$source\*" -DestinationPath $dest -Force
+          Write-Host "Created $dest"
 
+      # ---------- ARTEFAKT (OPTIONAL) ----------
       - name: Upload artifact (entire folder)
         uses: actions/upload-artifact@v4
         with:
           name: DreamDexed-Studio
           path: dist\DreamDexed-Studio
 
+      # ---------- RELEASE MIT DER JETZT VORHANDENEN ZIP ----------
       - name: Create Release (only on tag)
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ github.ref_name }}
           files: dist/DreamDexed-Studio.zip
           draft: true
           generate_release_notes: false
