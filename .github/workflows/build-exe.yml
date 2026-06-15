@@ -36,7 +36,6 @@ jobs:
             --add-data "DX7 Cartridges;DX7 Cartridges" ^
             Main.py
 
-      # ----- Ordner aus _internal neben die EXE VERSCHIEBEN -----
       - name: Move data folders next to EXE
         shell: pwsh
         run: |
@@ -48,31 +47,33 @@ jobs:
               Move-Item -Path $src -Destination $dst -Force
               Write-Host "Moved $folder to $dst"
             } else {
-              Write-Host "WARNING: $src not found – folder may be missing in build"
+              Write-Host "WARNING: $src not found"
             }
           }
 
-      - name: Debug - list dist content (after move)
-        run: dir dist\DreamDexed-Studio
-
-      - name: Zip the complete portable folder
+      - name: Remove Python source files from harvester
         shell: pwsh
         run: |
-          $source = "dist\DreamDexed-Studio"
-          $dest   = "dist\DreamDexed-Studio.zip"
-          Compress-Archive -Path "$source\*" -DestinationPath $dest -Force
+          $target = "dist\DreamDexed-Studio\harvester"
+          Get-ChildItem -Path $target -Include "*.py", "*.pyc" -Recurse | Remove-Item -Force
+          Write-Host "Removed .py and .pyc files from harvester"
 
+      - name: Debug - list dist content
+        run: dir dist\DreamDexed-Studio
+
+      # Ordner direkt als Artefakt hochladen (GitHub zippt automatisch)
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: DreamDexed-Studio
-          path: dist/DreamDexed-Studio.zip
+          path: dist\DreamDexed-Studio
 
       - name: Create Release (only on tag)
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
-          files: dist/DreamDexed-Studio.zip
+          files: |
+            dist\DreamDexed-Studio\*
           draft: true
           generate_release_notes: true
         env:
