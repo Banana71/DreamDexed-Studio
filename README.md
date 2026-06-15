@@ -1,4 +1,4 @@
-# DreamDexed Studio – The Seed Manager
+# DreamDexed Studio
 
 A Windows desktop application (tkinter) for managing performances and voices for
 the **Raspberry Pi** running **Circle** and **miniDexed / DreamDexed**. It connects
