@@ -44,6 +44,13 @@ jobs:
         run: |
           Compress-Archive -Path "dist\DreamDexed-Studio\*" -DestinationPath "dist\DreamDexed-Studio.zip"
 
+      # NEU: ZIP als Artifact hochladen (immer, auch ohne Tag)
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: DreamDexed-Studio
+          path: dist/DreamDexed-Studio.zip
+
       - name: Create Release (only on tag)
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
