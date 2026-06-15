@@ -9,6 +9,8 @@ DreamDexed Studio is available both as a **standalone, portable Windows executab
 
 <img width="1221" height="888" alt="DreamDexed Studio" src="https://github.com/user-attachments/assets/7cd18a21-94e3-4ede-ad3a-1c5763cb73a3" />
 
+## Download
+
 *Download latest Portable Windows version - unzip and run `DreamDexed-Studio.exe`*
 
 [![Download EXE](https://img.shields.io/badge/Download-Latest-blue?style=for-the-badge&logo=github)](https://github.com/Banana71/DreamDexed-Studio/releases/latest/download/DreamDexed-Studio.zip)  
