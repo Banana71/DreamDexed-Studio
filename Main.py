@@ -1771,6 +1771,23 @@ class Harvester(tk.Tk):
             winmm.midiOutShortMsg(self.midi_handle, msg)
         except Exception as e:
             self.log_message(f"MIDI Program Change error: {e}")
+            
+    def _send_controller_bank_select(self, bank):
+        """Sendet Bank Select (CC0+CC32) über das offene MIDI‑Handle."""
+        if self.midi_handle is None or self.minidexed_config is None:
+            return
+        ch = self.minidexed_config.get("performance_select_channel", 0)
+        if ch <= 0:
+            self.log_message("No PerformanceSelectChannel configured – bank select skipped.")
+            return
+        msb = (bank >> 7) & 0x7F
+        lsb = bank & 0x7F
+        cc_status = 0xB0 | (ch - 1)
+        try:
+            winmm.midiOutShortMsg(self.midi_handle, cc_status | (0 << 8) | (msb << 16))
+            winmm.midiOutShortMsg(self.midi_handle, cc_status | (32 << 8) | (lsb << 16))
+        except Exception as e:
+            self.log_message(f"Bank Select error: {e}")
 
     def _on_master_volume_change(self, value):
         """

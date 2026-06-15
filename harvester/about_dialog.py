@@ -31,7 +31,7 @@ def show_about(parent, base_dir):
     # Text lines
     lines = [
         "© 2026 by Soundplantage",
-        "Version 0.2.4 - 2026/06/13",
+        "Version 0.2.5 - 2026/06/15",
         "This software is released under the MIT License.",
     ]
     for line in lines:

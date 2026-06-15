@@ -837,10 +837,17 @@ class PerformanceManagerFrame(tk.Frame):
             return
 
         try:
-            send_bank_and_program(dev, chan, bank_index, program_index)
+            h = self.harvester
+            if hasattr(h, '_send_controller_bank_select'):
+                h._send_controller_bank_select(bank_index)
+            if hasattr(h, '_send_controller_program_change'):
+                h._send_controller_program_change(chan, program_index)
+            else:
+                # Fallback, falls die Methode noch nicht existiert
+                send_bank_and_program(dev, chan, bank_index, program_index)
             bank_str = f"{bank_index+1:03d}"
             prog_str = f"{program_index+1:03d}"
-            perf_name = match.group(2)          # Name aus dem Dateinamen (ohne Nummer und .ini)
+            perf_name = match.group(2)
             self.log(f'Prg Chg: {bank_str}:{prog_str} "{perf_name}"')
         except Exception as e:
             self.log(f"❌ Failed to send Program Change: {e}")
