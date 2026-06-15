@@ -35,13 +35,15 @@ jobs:
             --add-data "DX7 Cartridges;DX7 Cartridges" `
             Main.py
 
+      - name: Debug - list dist content
+        run: dir dist\DreamDexed-Studio
+
       - name: Zip the portable folder (flat layout)
         shell: pwsh
         run: |
           $source = "dist\DreamDexed-Studio"
           $dest   = "dist\DreamDexed-Studio.zip"
-          Get-ChildItem -Path $source -Include "DreamDexed-Studio.exe", "harvester", "DX7 Cartridges" |
-            Compress-Archive -DestinationPath $dest -Force
+          Compress-Archive -Path "$source\DreamDexed-Studio.exe", "$source\harvester", "$source\DX7 Cartridges" -DestinationPath $dest -Force
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
