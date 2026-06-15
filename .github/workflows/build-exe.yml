@@ -36,7 +36,23 @@ jobs:
             --add-data "DX7 Cartridges;DX7 Cartridges" ^
             Main.py
 
-      - name: Debug - list dist content
+      # ----- Ordner aus _internal neben die EXE VERSCHIEBEN -----
+      - name: Move data folders next to EXE
+        shell: pwsh
+        run: |
+          $base = "dist\DreamDexed-Studio"
+          foreach ($folder in @("harvester", "DX7 Cartridges")) {
+            $src = Join-Path $base "_internal\$folder"
+            $dst = Join-Path $base $folder
+            if (Test-Path $src) {
+              Move-Item -Path $src -Destination $dst -Force
+              Write-Host "Moved $folder to $dst"
+            } else {
+              Write-Host "WARNING: $src not found – folder may be missing in build"
+            }
+          }
+
+      - name: Debug - list dist content (after move)
         run: dir dist\DreamDexed-Studio
 
       - name: Zip the complete portable folder
