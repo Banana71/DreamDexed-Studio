@@ -3,8 +3,8 @@ name: Build Windows EXE (portable ZIP)
 on:
   push:
     tags:
-      - 'v*'               # Wird ausgelöst bei Tags wie v0.3.0, v1.0.0
-  workflow_dispatch:        # Ermöglicht manuellen Start über GitHub-Webseite
+      - 'v*'
+  workflow_dispatch:
 
 jobs:
   build:
@@ -29,10 +29,9 @@ jobs:
           pyinstaller `
             --onedir `
             --windowed `
-            --icon=harvester/logo.ico `
+            --icon=harvester/icon.ico `
             --add-data "harvester;harvester" `
             --add-data "DX7 Cartridges;DX7 Cartridges" `
-            --add-data "VoiceSheets;VoiceSheets" `
             Main.py
 
       - name: Rename output folder to DreamDexed-Studio
