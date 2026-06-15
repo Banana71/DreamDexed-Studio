@@ -1,0 +1,56 @@
+name: Build Windows EXE (portable ZIP)
+
+on:
+  push:
+    tags:
+      - 'v*'               # Wird ausgelöst bei Tags wie v0.3.0, v1.0.0
+  workflow_dispatch:        # Ermöglicht manuellen Start über GitHub-Webseite
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      - name: Build with PyInstaller (onedir)
+        run: |
+          pyinstaller `
+            --onedir `
+            --windowed `
+            --icon=harvester/logo.ico `
+            --add-data "harvester;harvester" `
+            --add-data "DX7 Cartridges;DX7 Cartridges" `
+            --add-data "VoiceSheets;VoiceSheets" `
+            Main.py
+
+      - name: Rename output folder to DreamDexed-Studio
+        shell: pwsh
+        run: |
+          Rename-Item -Path "dist\Main" -NewName "DreamDexed-Studio"
+
+      - name: Zip the portable folder
+        shell: pwsh
+        run: |
+          Compress-Archive -Path "dist\DreamDexed-Studio\*" -DestinationPath "dist\DreamDexed-Studio.zip"
+
+      - name: Create Release (only on tag)
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/DreamDexed-Studio.zip
+          draft: true
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
