@@ -51,12 +51,13 @@ jobs:
             }
           }
 
-      - name: Remove Python source files from harvester
+      - name: Remove Python source files and icon from harvester
         shell: pwsh
         run: |
           $target = "dist\DreamDexed-Studio\harvester"
           Get-ChildItem -Path $target -Include "*.py", "*.pyc" -Recurse | Remove-Item -Force
-          Write-Host "Removed .py and .pyc files from harvester"
+          Remove-Item "$target\icon.ico" -Force -ErrorAction SilentlyContinue
+          Write-Host "Cleaned harvester folder"
 
       - name: Copy midi_button_config.json to base folder
         shell: pwsh
@@ -66,7 +67,6 @@ jobs:
             Copy-Item "midi_button_config.json" $dest -Force
             Write-Host "Copied existing midi_button_config.json"
           } else {
-            # Leere Default-Konfiguration anlegen (leeres JSON-Objekt)
             '{}' | Out-File -FilePath $dest -Encoding utf8
             Write-Host "Created default midi_button_config.json"
           }
