@@ -25,25 +25,26 @@ jobs:
           pip install pyinstaller
 
       - name: Build with PyInstaller (onedir)
+        shell: cmd
         run: |
-          pyinstaller `
-            --onedir `
-            --windowed `
-            --name "DreamDexed-Studio" `
-            --icon=harvester/icon.ico `
-            --add-data "harvester;harvester" `
-            --add-data "DX7 Cartridges;DX7 Cartridges" `
+          pyinstaller ^
+            --onedir ^
+            --windowed ^
+            --name "DreamDexed-Studio" ^
+            --icon=harvester/icon.ico ^
+            --add-data "harvester;harvester" ^
+            --add-data "DX7 Cartridges;DX7 Cartridges" ^
             Main.py
 
       - name: Debug - list dist content
         run: dir dist\DreamDexed-Studio
 
-      - name: Zip the portable folder (flat layout)
+      - name: Zip the complete portable folder
         shell: pwsh
         run: |
           $source = "dist\DreamDexed-Studio"
           $dest   = "dist\DreamDexed-Studio.zip"
-          Compress-Archive -Path "$source\DreamDexed-Studio.exe", "$source\harvester", "$source\DX7 Cartridges" -DestinationPath $dest -Force
+          Compress-Archive -Path "$source\*" -DestinationPath $dest -Force
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
