@@ -838,13 +838,25 @@ class PerformanceManagerFrame(tk.Frame):
 
         try:
             h = self.harvester
+            # Diagnose-Logs vor den Aufrufen
+            self.log(f"DEBUG PC: midi_handle={'ok' if h.midi_handle else 'None'}, " +
+                     f"dev={h.midi_out_device_index}, minidexed={'yes' if h.minidexed_config else 'no'}")
+            self.log(f"DEBUG PC: has_bank_select={hasattr(h, '_send_controller_bank_select')}, " +
+                     f"has_prog_change={hasattr(h, '_send_controller_program_change')}")
+
             if hasattr(h, '_send_controller_bank_select'):
+                self.log(f"DEBUG PC: calling bank_select for bank {bank_index}")
                 h._send_controller_bank_select(bank_index)
+
             if hasattr(h, '_send_controller_program_change'):
-                h._send_controller_program_change(chan, program_index)
+                # Verwende den Kanal aus minidexed_config oder Fallback
+                chan_pc = h.minidexed_config.get("performance_select_channel", h.midi_out_channel) if h.minidexed_config else h.midi_out_channel
+                self.log(f"DEBUG PC: calling prog_change for ch={chan_pc}, prog={program_index}")
+                h._send_controller_program_change(chan_pc, program_index)
             else:
-                # Fallback, falls die Methode noch nicht existiert
+                self.log(f"DEBUG PC: Fallback to send_bank_and_program")
                 send_bank_and_program(dev, chan, bank_index, program_index)
+
             bank_str = f"{bank_index+1:03d}"
             prog_str = f"{program_index+1:03d}"
             perf_name = match.group(2)
