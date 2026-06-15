@@ -6,6 +6,10 @@ from PIL import Image, ImageTk
 from .constants import (SCALE_FACTOR, COLOR_BG, COLOR_FG, COLOR_BG_BUTTON,
                         COLOR_BG_SELECT, FONT_NORMAL, FONT_SMALL, COLOR_FG_DIM)
 
+# HIER DIE ZENTRALEN VARIABLEN FÜR DEN WORKFLOW
+VERSION = "0.2.6"
+VERSION_DATE = "2026/06/15"
+
 def show_about(parent, base_dir):
     """Open a small info window with logo and version information.
     The window is 20% larger than the content to give it some breathing room."""
@@ -28,10 +32,10 @@ def show_about(parent, base_dir):
         lbl_img.image = logo_tk   # keep reference
         lbl_img.pack(pady=(20, 10))
 
-    # Text lines
+    # Text lines (Nutzen jetzt die Variablen von oben)
     lines = [
         "© 2026 by Soundplantage - Banana71",
-        "Version 0.2.5 - 2026/06/15",
+        f"Version {VERSION} - {VERSION_DATE}",
         "This software is released under the MIT License.",
     ]
     for line in lines:
