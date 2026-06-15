@@ -6,6 +6,9 @@ on:
       - 'v*'
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: windows-latest
@@ -51,12 +54,11 @@ jobs:
             }
           }
 
-      - name: Remove Python source files and icon from harvester
+      - name: Remove Python source files from harvester (keep assets)
         shell: pwsh
         run: |
           $target = "dist\DreamDexed-Studio\harvester"
           Get-ChildItem -Path $target -Include "*.py", "*.pyc" -Recurse | Remove-Item -Force
-          Remove-Item "$target\icon.ico" -Force -ErrorAction SilentlyContinue
           Write-Host "Cleaned harvester folder"
 
       - name: Copy midi_button_config.json to base folder
@@ -84,9 +86,8 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
-          files: |
-            dist\DreamDexed-Studio\*
+          files: dist/DreamDexed-Studio.zip
           draft: true
-          generate_release_notes: true
+          generate_release_notes: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
