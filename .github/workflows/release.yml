@@ -1,4 +1,4 @@
-name: Build Windows EXE (portable ZIP)
+name: Build and Release Portable Windows App
 
 on:
   push:
