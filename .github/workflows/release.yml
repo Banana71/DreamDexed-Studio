@@ -61,7 +61,7 @@ jobs:
         run: |
           pip install -r requirements.txt
           pip install pyinstaller
-          pip install markdown-pdf
+          pip install markdown
 
       - name: Build with PyInstaller (onedir)
         shell: cmd
@@ -109,19 +109,50 @@ jobs:
             Write-Host "Created default midi_button_config.json"
           }
 
-      - name: Convert MANUAL.md to PDF
+      - name: Convert MANUAL.md to PDF via Chrome
         shell: pwsh
         run: |
-          # Ein kurzes Inline-Python-Skript wandelt die MD direkt in PDF um
+          $exeDir = "dist\DreamDexed-Studio"
+          
+          # 1. MD in HTML umwandeln via Standard-Python-Markdown
           python -c '
-          from markdown_pdf import MarkdownPdf, Section
-          pdf = MarkdownPdf()
+          import markdown
           with open("MANUAL.md", "r", encoding="utf-8") as f:
-              md_content = f.read()
-          pdf.add_section(Section(md_content))
-          pdf.save("dist/DreamDexed-Studio/MANUAL.pdf")
+              text = f.read()
+          html_content = markdown.markdown(text, extensions=["extra"])
+          
+          # Einbetten von CSS für ein schönes Layout und Seitenzahlen beim Drucken
+          full_html = f"""<!DOCTYPE html>
+          <html>
+          <head>
+          <meta charset="utf-8">
+          <style>
+              body {{ font-family: sans-serif; line-height: 1.6; padding: 20px; }}
+              img {{ max-width: 100%; height: auto; display: block; margin: 20px 0; }}
+              @page {{
+                  size: A4;
+                  margin: 2cm;
+                  @bottom-right {{
+                      content: counter(page);
+                  }}
+              }}
+          </style>
+          </head>
+          <body>
+          {{html_content}}
+          </body>
+          </html>"""
+          
+          with open("MANUAL.html", "w", encoding="utf-8") as f:
+              f.write(full_html)
           '
-          Write-Host "MANUAL.pdf erfolgreich via markdown-pdf erstellt."
+          
+          # 2. Chrome im Headless-Modus starten und das HTML als PDF drucken
+          & "C:\Program Files\Google\Chrome\Application\chrome.exe" --headless --disable-gpu --print-to-pdf="$exeDir\MANUAL.pdf" MANUAL.html
+          
+          # Aufräumen
+          Remove-Item "MANUAL.html" -Force
+          Write-Host "MANUAL.pdf erfolgreich via Chrome gedruckt."
 
       - name: Zip the portable folder
         shell: pwsh
