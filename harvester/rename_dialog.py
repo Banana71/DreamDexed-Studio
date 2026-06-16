@@ -12,6 +12,7 @@ from harvester.ini_utils import hex_to_text, text_to_hex, parse_ini_for_voices, 
 from .perf2sheet import parse_voice_155, generate_datasheet, sanitize_filename
 from .Perf2syx import single_to_bank128, yamaha_checksum, INIT_VOICE_128, SYX_HDR, SYX_TAIL
 from .mixer_dialog import MixerPanel
+from harvester.widgets import ToolTip
 
 class RenameDialog(tk.Toplevel):
     def __init__(self, parent, ftp_creds, remote_dir, filename, refresh_callback, harvester):
@@ -406,6 +407,9 @@ class RenameDialog(tk.Toplevel):
         btn_frame.pack(pady=20)
         btn_save = tk.Button(btn_frame, text=" Save ", command=self.save_changes, **btn_style)
         btn_save.pack(side="left", padx=5)
+        btn_copy = tk.Button(btn_frame, text=" Copy ", command=self.copy_to_share, **btn_style)
+        btn_copy.pack(side="left", padx=5)   
+        ToolTip(btn_copy, "Copy this performance to the local ´./performance/share´ folder")             
         btn_cancel = tk.Button(btn_frame, text="Cancel", command=self.destroy, **btn_style)
         btn_cancel.pack(side="left", padx=5)
 
@@ -555,6 +559,19 @@ class RenameDialog(tk.Toplevel):
                 self.name_entries[tg].delete(0, tk.END)
                 self.name_entries[tg].insert(0, new_name)
                 idx += 1
+
+    def copy_to_share(self):
+        """Copy the current performance .ini file to the local ./performance/share/ folder."""
+        base = self.harvester.entry_base_path.get()
+        share_dir = os.path.join(base, "performance", "share")
+        os.makedirs(share_dir, exist_ok=True)
+        dest_path = os.path.join(share_dir, self.filename)
+        try:
+            with open(dest_path, 'w', encoding='utf-8') as f:
+                f.write(''.join(self.ini_lines))
+            self.harvester.log_message(f"📋 Copied {self.filename} to performance/share/")
+        except Exception as e:
+            self.harvester.log_message(f"❌ Failed to copy {self.filename}: {e}")
 
     def save_changes(self):
         new_perf_name = self.entry_perf_name.get().strip()
