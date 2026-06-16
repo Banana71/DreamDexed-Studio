@@ -24,7 +24,7 @@ Since DreamDexed-Studio is an open-source project and is not (yet) digitally sig
 
 ---
 
-## Chapter 3: Initial Setup (One-Time)
+## Chapter 2: Initial Setup (One-Time)
 
 Once the program is running, you will need to configure the basic settings for your hardware and file paths. This only needs to be done once.
 
@@ -92,7 +92,7 @@ Please understand that DreamDexed-Studio is a pure open-source utility tool. I a
 
 ---
 
-## Chapter 4: The Right Window Half – The Performance Manager
+## Chapter 3: The Right Window Half – The Performance Manager
 
 The **Performance Manager** on the right side of the Studio is dedicated to managing, analyzing, and restructuring your performances. The interface is designed as a classic two-column file explorer:
 * **Left Column (Source):** This is where you access your local backups, repositories, or import folders on your PC.
@@ -127,7 +127,7 @@ To organize your sounds, you can create a dedicated bank for your favorite perfo
   2. **Cleaning up the Numbering:** If you previously deleted individual performances from the bank, gaps will appear in the numerical prefixes (e.g., deleting sound `002` leaves a gap between `001` and `003`). The Reindex function closes these gaps and sequentially renumbers the bank seamlessly (e.g., changing `003` back to `002`).
   * > **Note on the Hardware:** The miniDexed/DreamDexed hardware itself does not care about gaps in the index. Skipping a number will not cause "dead sounds"; the device simply skips to the next available file when switching patches. Reindexing is primarily for visual neatness on your display and within the explorer.
 
-### 4.2 Important for Hardware: The Reboot Requirement
+### 3.2 Important for Hardware: The Reboot Requirement
 For your miniDexed or DreamDexed to actually recognize and display the newly created bank and sorted sounds, you must restart the unit. To do this, press and hold the **"DreamDexed reboot"** button in the Studio for **2 seconds**.
 
 **Background on how miniDexed / DreamDexed operates:**
@@ -135,7 +135,7 @@ This hardware behavior is hardcoded into the core of the synthesizer and cannot 
 * **Banks** are read by the device **exclusively during the system boot process**. If you create a new bank (a new folder), it remains invisible to the hardware until the next reboot.
 * **Performances within the banks**, however, are loaded dynamically the exact moment you **switch into that specific bank** on the hardware.
 
-### 4.3 The Integrated Performance Editor (Editing & Renaming)
+### 3.3 The Integrated Performance Editor (Editing & Renaming)
 Any performance selected in the right column (**Destination**) can be opened and edited directly within the Studio, without needing to touch a single line of text code.
 
 * **Opening the Editor:** Select the desired performance on the right side and open it either via a **double-click** or by pressing the **[F2]** key. This opens the *Performance Editor* window.
@@ -145,7 +145,7 @@ Any performance selected in the right column (**Destination**) can be opened and
   * Hardware assignments such as MIDI Channels (**CH**), Volume (**VOL**), Panorama (**PAN**), and much more.
 * **Saving & Loading:** After clicking Save, the Studio writes the changes directly to the file on the Pi's SD card. As soon as you reload the performance on your miniDexed or DreamDexed, your changes will be active instantly.
 
-### 4.4 The Mixer Overview (Visual Signal Flow Analysis)
+### 3.4 The Mixer Overview (Visual Signal Flow Analysis)
 Directly inside the opened editor window, you will find a separate tab named **"Mixer"**.
 
 * **Purpose of the Mixer:** This visual mixing console is **read-only**. The values cannot be edited here; instead, it serves as a perfect, quick overview of your sound's entire routing.
@@ -156,7 +156,7 @@ Directly inside the opened editor window, you will find a separate tab named **"
   > * On a standard **miniDexed**, the effects section is naturally leaner: The overview will only show you the global *PlateReverb* and the *Compressor* (which functions strictly as a limiter on the miniDexed).
   > * Only when paired with a **DreamDexed** does the Mixer overview unfold its full depth, displaying all advanced, globally utilized master and insert effects.
 
-### 4.5 The Sound Designer Highlight: "set Temp.syx"
+### 3.5 The Sound Designer Highlight: "set Temp.syx"
 If you realize while editing a performance that the FM sounds require deeper, fundamental sound design adjustments, the most powerful tool of the Studio comes into play:
 
 * **The "set Temp.syx" Function:** This button instantly extracts the exact DX7 voice data (envelopes, frequencies, algorithms) of all utilized Tone Generators (TGs) from the currently active performance.
@@ -167,7 +167,7 @@ If you realize while editing a performance that the FM sounds require deeper, fu
   3. **The Magic:** If your Dexed editor on the PC is configured correctly (with its MIDI Out routed to the Pi), your parameter tweaks in Dexed will arrive **at the miniDexed/DreamDexed in real time**. You will hear every single adjustment instantly on the hardware.
 * This allows any performance to be handed over to Dexed incredibly fast and edited directly at the core sound level.
 
-### 4.6 Exporting DX7 Voice Sheets
+### 3.6 Exporting DX7 Voice Sheets
 For documentation or sharing your sounds without relying on binary SysEx files, the Studio includes a specialized data sheet generator (`perf2sheet.py`).
 
 * **Exporting from the Editor:** Click the **Data Sheet icon** directly inside the *Performance Editor*. The Studio extracts the cryptic hex values of the selected voice and translates them into a fully human-readable text document.
@@ -177,7 +177,7 @@ For documentation or sharing your sounds without relying on binary SysEx files, 
 
 ---
 
-## Chapter 5: The Integrated Chord Scanner (Chord Recognition)
+## Chapter 4: The Integrated Chord Scanner (Chord Recognition)
 
 In addition to managing performances, DreamDexed-Studio features a highly useful live tool: an integrated Chord Scanner.
 
