@@ -112,7 +112,7 @@ For quick orientation, the bottom two lines of the right window half offer a bri
 ### 4.1 Practical Example: Creating and Sorting a New "Favorite" Bank
 To organize your sounds, you can create a dedicated bank for your favorite performances (e.g., "Favorite") and copy your preferred sounds into it.
 
-<img width="586" height="471" alt="Performance_Manager" src="https://github.com/user-attachments/assets/26d56ec8-9301-4793-b250-8b5dc4bd7879" />
+<img width="585" height="465" alt="Performance_Manager" src="https://github.com/user-attachments/assets/81ca34c8-8135-4ba6-992d-29f9e74dfa30" />
 
 * **Step 1: Activate the Destination Side**
   Click once anywhere inside the right explorer half (**Destination**) to bring this area into focus.
