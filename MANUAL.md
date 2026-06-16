@@ -29,6 +29,9 @@ Since DreamDexed-Studio is an open-source project and is not (yet) digitally sig
 Once the program is running, you will need to configure the basic settings for your hardware and file paths. This only needs to be done once.
 
 ### Step 1: Configure the Connection to miniDexed / DreamDexed
+
+<img width="318" height="351" alt="Profile" src="https://github.com/user-attachments/assets/b1e1d568-c713-4ff8-b210-e2b41ab254b7" />
+
 1. Click the gear icon **"Edit Profiles"** in the top left corner.
 2. **Profile Name:** Give your profile a custom name (e.g., `RD-300`, `DIY-MiniDexed`, or `DT-DX`).
 3. **IP Address:** Enter the IP address of your Raspberry Pi (e.g., `192.168.178.20`).
@@ -56,6 +59,8 @@ Test finished.
 
 ### Step 3: Configure Paths, GUI & MIDI
 Click **"Expand"** in the *"Path, Configuration & Master Volume"* section to reveal the advanced options.
+
+<img width="617" height="456" alt="Path" src="https://github.com/user-attachments/assets/9f177cd7-1943-48d7-9abc-8a8be6428b5d" />
 
 * **Dexed Path (Path to your Cartridges):**
   1. Open the original **Dexed** desktop application on your PC, click the **CART** button, and right-click any folder (e.g., *SynprezFM*). Select **"Open Location"**.
@@ -107,6 +112,8 @@ For quick orientation, the bottom two lines of the right window half offer a bri
 ### 4.1 Practical Example: Creating and Sorting a New "Favorite" Bank
 To organize your sounds, you can create a dedicated bank for your favorite performances (e.g., "Favorite") and copy your preferred sounds into it.
 
+<img width="586" height="471" alt="Performance_Manager" src="https://github.com/user-attachments/assets/26d56ec8-9301-4793-b250-8b5dc4bd7879" />
+
 * **Step 1: Activate the Destination Side**
   Click once anywhere inside the right explorer half (**Destination**) to bring this area into focus.
 * **Step 2: Create a New Bank via [F4]**
@@ -129,6 +136,8 @@ To organize your sounds, you can create a dedicated bank for your favorite perfo
 
 ### 3.2 Important for Hardware: The Reboot Requirement
 For your miniDexed or DreamDexed to actually recognize and display the newly created bank and sorted sounds, you must restart the unit. To do this, press and hold the **"DreamDexed reboot"** button in the Studio for **2 seconds**.
+
+<img width="145" height="47" alt="DreamDexed reboot" src="https://github.com/user-attachments/assets/59324c55-4441-45ad-b65e-b6ec5381f459" />
 
 **Background on how miniDexed / DreamDexed operates:**
 This hardware behavior is hardcoded into the core of the synthesizer and cannot be altered by DreamDexed-Studio:
