@@ -61,7 +61,6 @@ jobs:
         run: |
           pip install -r requirements.txt
           pip install pyinstaller
-          pip install mdpdf
 
       - name: Build with PyInstaller (onedir)
         shell: cmd
@@ -107,22 +106,6 @@ jobs:
           } else {
             '{}' | Out-File -FilePath $dest -Encoding utf8
             Write-Host "Created default midi_button_config.json"
-          }
-
-      - name: Convert MANUAL.md to PDF
-        shell: pwsh
-        run: |
-          if (Test-Path "MANUAL.md") {
-            Write-Host "Converting MANUAL.md to PDF..."
-            mdpdf MANUAL.md dist/DreamDexed-Studio/MANUAL.pdf --no-sandbox
-            if (Test-Path "dist/DreamDexed-Studio/MANUAL.pdf") {
-              Write-Host "✓ PDF created successfully: MANUAL.pdf"
-            } else {
-              Write-Error "PDF creation failed!"
-              exit 1
-            }
-          } else {
-            Write-Host "WARNING: MANUAL.md not found, skipping PDF creation"
           }
 
       - name: Zip the portable folder
