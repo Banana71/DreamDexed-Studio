@@ -7,8 +7,8 @@ from .constants import (SCALE_FACTOR, COLOR_BG, COLOR_FG, COLOR_BG_BUTTON,
                         COLOR_BG_SELECT, FONT_NORMAL, FONT_SMALL, COLOR_FG_DIM)
 
 # HIER DIE ZENTRALEN VARIABLEN FÜR DEN WORKFLOW
-VERSION = "0.2.6"
-VERSION_DATE = "2026/06/15"
+VERSION = "0.2.7"
+VERSION_DATE = "2026/06/16"
 
 def show_about(parent, base_dir):
     """Open a small info window with logo and version information.
