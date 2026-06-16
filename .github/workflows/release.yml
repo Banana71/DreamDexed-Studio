@@ -108,6 +108,33 @@ jobs:
             Write-Host "Created default midi_button_config.json"
           }
 
+      - name: Install Pandoc and WeasyPrint (for PDF generation)
+        shell: pwsh
+        run: |
+          # Pandoc Standalone für Windows herunterladen und entpacken
+          Invoke-WebRequest -Uri "https://github.com/jgm/pandoc/releases/download/3.1.11.1/pandoc-3.1.11.1-windows-x86_64.zip" -OutFile "pandoc.zip"
+          Expand-Archive -Path "pandoc.zip" -DestinationPath "pandoc_bin"
+          Move-Item "pandoc_bin\pandoc-3.1.11.1\pandoc.exe" -Destination "dist\DreamDexed-Studio\"
+          
+          # WeasyPrint für die PDF-Konvertierung installieren
+          pip install weasyprint
+
+      - name: Convert MANUAL.md to PDF
+        shell: pwsh
+        run: |
+          $exeDir = "dist\DreamDexed-Studio"
+          
+          # MD via Pandoc zu HTML konvertieren
+          & "$exeDir\pandoc.exe" MANUAL.md -f markdown -t html5 -o "$exeDir\MANUAL.html"
+          
+          # HTML via WeasyPrint zu PDF rendern
+          weasyprint "$exeDir\MANUAL.html" "$exeDir\MANUAL.pdf"
+          
+          # Aufräumen: Temporäre Pandoc-Dateien löschen, damit sie nicht im ZIP landen
+          Remove-Item "$exeDir\pandoc.exe" -Force
+          Remove-Item "$exeDir\MANUAL.html" -Force
+          Write-Host "MANUAL.pdf erfolgreich erstellt und im App-Ordner abgelegt."
+
       - name: Zip the portable folder
         shell: pwsh
         run: |
