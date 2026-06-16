@@ -190,6 +190,8 @@ For documentation or sharing your sounds without relying on binary SysEx files, 
 
 In addition to managing performances, DreamDexed-Studio features a highly useful live tool: an integrated Chord Scanner.
 
+<img width="251" height="48" alt="Chord Scanner" src="https://github.com/user-attachments/assets/2a145b5c-afba-4cef-976e-217c392095c6" />
+
 * **Purpose:** If you have a MIDI keyboard connected to your PC, the Studio analyzes your live playing in the background, detects the chords, and displays the chord name directly within the GUI. This is incredibly practical for keeping track of harmonic structures during sound design sessions or while testing performances.
 * **UI Placement:** The chord display is prominently placed in the header area, directly above the log window. This ensures that the main area remains clear for text logs while allowing you to monitor status updates just to the left of it.
 * **Setup & Configuration:**
