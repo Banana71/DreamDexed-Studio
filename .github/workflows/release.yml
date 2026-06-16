@@ -61,7 +61,6 @@ jobs:
         run: |
           pip install -r requirements.txt
           pip install pyinstaller
-          pip install markdown
 
       - name: Build with PyInstaller (onedir)
         shell: cmd
@@ -108,61 +107,6 @@ jobs:
             '{}' | Out-File -FilePath $dest -Encoding utf8
             Write-Host "Created default midi_button_config.json"
           }
-
-      - name: Convert MANUAL.md to PDF via Chrome
-        shell: pwsh
-        run: |
-          $exeDir = "dist\DreamDexed-Studio"
-          
-          # 1. Erstelle ein temporäres Python-Skript (verhindert String-Konflikte in pwsh)
-          $script = @'
-          import markdown
-          
-          with open("MANUAL.md", "r", encoding="utf-8") as f:
-              text = f.read()
-              
-          html_content = markdown.markdown(text, extensions=["extra"])
-          
-          full_html = f"""<!DOCTYPE html>
-          <html>
-          <head>
-          <meta charset="utf-8">
-          <style>
-              body {{ font-family: sans-serif; line-height: 1.6; padding: 20px; }}
-              img {{ max-width: 100%; height: auto; display: block; margin: 20px 0; }}
-              @page {{
-                  size: A4;
-                  margin: 2cm;
-              }}
-          </style>
-          </head>
-          <body>
-          {html_content}
-          </body>
-          </html>"""
-          
-          with open("MANUAL.html", "w", encoding="utf-8") as f:
-              f.write(full_html)
-          '@
-          $script | Out-File -FilePath "make_html.py" -Encoding utf8
-          
-          # 2. Skript ausführen, um MANUAL.html zu erzeugen
-          python make_html.py
-          
-          # 3. Chrome im Headless-Modus starten und die PDF DIREKT im Zielordner ablegen
-          & "C:\Program Files\Google\Chrome\Application\chrome.exe" --headless --disable-gpu --print-to-pdf="$exeDir\MANUAL.pdf" MANUAL.html
-          
-          # 4. Überprüfen, ob die Datei wirklich da ist (Sicherheitsgurt für das Workflow-Log)
-          if (Test-Path "$exeDir\MANUAL.pdf") {
-              Write-Host "SUCCESS: MANUAL.pdf wurde erfolgreich im Ordner $exeDir abgelegt."
-          } else {
-              Write-Error "ERROR: MANUAL.pdf wurde nicht im Zielordner gefunden!"
-              exit 1
-          }
-          
-          # Aufräumen
-          Remove-Item "MANUAL.html" -Force
-          Remove-Item "make_html.py" -Force
 
       - name: Zip the portable folder
         shell: pwsh
