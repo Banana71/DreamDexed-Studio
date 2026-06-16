@@ -2,9 +2,9 @@
 
 Hi, I'm Peter (perhaps better known to many in the community as **Banana71** from *Soundplantage*). As a sound designer, I created the factory performances for both miniDexed and DreamDexed, among other projects.
 
-Anyone who works extensively with FM synthesizers and hardware emulations quickly realizes that managing data, converting SysEx files, and handling backups via FTP can become quite tedious over time. That is exactly why DreamDexed-Studio was born. What originally started as a collection of small helper scripts to make my own daily work easier has now grown into a fully fledged desktop application. 
+If you work a lot with FM synths and hardware emulations, you know the drill: managing files, converting SysEx data, and dealing with FTP backups gets old pretty fast. That’s exactly why I started DreamDexed-Studio. It actually began as a handful of simple scripts to make my own daily workflow a bit easier, but over time, it naturally grew into a full desktop app.
 
-This tool is designed to make your workflow with miniDexed and DreamDexed as simple and efficient as possible.
+This tool is designed to take the tedious manual work out of managing your miniDexed and DreamDexed setup.
 
 ---
 
