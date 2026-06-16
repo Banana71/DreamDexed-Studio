@@ -5,8 +5,8 @@ on:
     branches:
       - main
     paths:
-      - 'harvester/about_dialog.py' # Trigger, wenn die Version im Code geändert wird
-  workflow_dispatch: # Erlaubt weiterhin manuelles Starten
+      - 'harvester/about_dialog.py'
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -19,40 +19,36 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # Wichtig, um bestehende Tags für den Vergleich zu prüfen
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
-      # ---------- AUTOMATISCHE VERSIONSERMITTLUNG & TAG-ERSTELLUNG ----------
       - name: Extract version and check tag
         shell: pwsh
         id: version_check
         run: |
-          # Extrahiere die Versionsnummer aus der about_dialog.py
           $versionLine = Get-Content "harvester/about_dialog.py" | Select-String -Pattern '^VERSION\s*=\s*'
           if ($versionLine -match '"([^"]+)"') {
               $version = $Matches[1]
           } else {
-              Write-Error "VERSION konnte in harvester/about_dialog.py nicht gefunden werden!"
+              Write-Error "VERSION could not be found in harvester/about_dialog.py!"
               exit 1
           }
           
           $tag = "v$version"
-          Write-Host "Gefundene Software-Version: $version"
-          Write-Host "Ziel-Tag: $tag"
+          Write-Host "Found software version: $version"
+          Write-Host "Target tag: $tag"
           
-          # Prüfen, ob der Tag bereits im Repository existiert
           $tagExists = git tag -l $tag
           if ($tagExists) {
-              Write-Host "Tag $tag existiert bereits."
-              # Wenn manuell gestartet oder Tag existiert, setzen wir skip_release auf true
+              Write-Host "Tag $tag already exists."
               echo "SKIP_RELEASE=true" >> $env:GITHUB_ENV
               echo "RELEASE_TAG=$tag" >> $env:GITHUB_ENV
           } else {
-              Write-Host "Neuer Tag erkannt. Erstelle Tag $tag..."
+              Write-Host "New tag detected. Creating tag $tag..."
               git config --global user.name "github-actions[bot]"
               git config --global user.email "github-actions[bot]@users.noreply.github.com"
               git tag $tag
@@ -78,7 +74,6 @@ jobs:
             --add-data "DX7 Cartridges;DX7 Cartridges" ^
             Main.py
 
-      # Schließe about_dialog.py explizit ein, falls PyInstaller sie nicht automatisch erfasst
       - name: Move data folders next to EXE
         shell: pwsh
         run: |
@@ -117,7 +112,7 @@ jobs:
         shell: pwsh
         run: |
           $source = "dist\DreamDexed-Studio"
-          $dest   = "dist\DreamDexed-Studio.zip"
+          $dest   = "dist\DreamDexed-Studio ${{ env.RELEASE_TAG }}.zip"
           Compress-Archive -Path "$source\*" -DestinationPath $dest -Force
           Write-Host "Created $dest"
 
@@ -127,14 +122,13 @@ jobs:
           name: DreamDexed-Studio
           path: dist\DreamDexed-Studio
 
-      # ---------- AUTOMATISCHER RELEASE-SCHRITT ----------
       - name: Create Release (only on new version)
         if: env.SKIP_RELEASE == 'false'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ env.RELEASE_TAG }}
-          files: dist/DreamDexed-Studio.zip
-          draft: false  # Direkt als finaler Release veröffentlichen
-          generate_release_notes: true # GitHub generiert die Commit-Liste automatisch
+          files: dist/DreamDexed-Studio ${{ env.RELEASE_TAG }}.zip
+          draft: false
+          generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
