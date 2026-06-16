@@ -206,6 +206,7 @@ class PerformanceManagerFrame(tk.Frame):
         self.tree_right.bind("<F4>", self.cmd_create_bank_f4)
         self.tree_right.bind("<F5>", lambda e: self.compact_performances())
         self.tree_right.bind("<Delete>", self.cmd_delete_right)
+        self.tree_right.bind("<Escape>", lambda e: self.tree_right.selection_remove(self.tree_right.selection())) 
         self.tree_right_container = tree_container
         paned.add(right_frame, minsize=300)
 
@@ -963,7 +964,13 @@ class PerformanceManagerFrame(tk.Frame):
     def on_drag_start(self, event):
         item = self.tree_right.identify_row(event.y)
         self.current_target = None
-        if not item: return
+
+        # Klick in leeren Bereich → Auswahl aufheben und nichts weiter tun
+        if not item:
+            self.tree_right.selection_remove(self.tree_right.selection())
+            self.dragged_item = None
+            return
+
         val = self.tree_right.item(item, "values")[0]
         if val.startswith("📄 "):
             self.dragged_item = item

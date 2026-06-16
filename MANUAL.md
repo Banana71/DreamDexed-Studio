@@ -112,7 +112,7 @@ To organize your sounds, you can create a dedicated bank for your favorite perfo
 * **Step 2: Create a New Bank via [F4]**
   Press the **[F4]** key. The Studio will automatically generate a new bank and assign the next available numerical index by default (e.g., `002_Favorite`).
   * *Note on the Index:* You can modify the three-digit index prefix at any time to control the order of the banks on your synthesizer's display.
-  * > **Known GUI Note (Workaround):** If you have previously clicked on a bank, it currently cannot be deleted or deselected directly, which may block the `[F4]` command. If this happens, simply navigate one level up in the folder structure and return to the performance folder. The focus will be cleared, and you can press `[F4]` to create a new bank as usual.
+  * > **💡 Pro-Tip (Selection Focus):** To create a new bank, no existing bank or file must be selected. If a bank is currently highlighted and blocking the `[F4]` command, you can instantly clear the selection focus by pressing the **[Esc]** key or by **clicking into the empty space** below the file list on the right side. Once the highlight disappears, press `[F4]` to generate your new bank.
 * **Step 3: Enter the New Bank**
   Open the newly created, empty bank by **double-clicking** its name.
 * **Step 4: Copy Performances**
