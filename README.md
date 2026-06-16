@@ -61,17 +61,20 @@ pip install -r requirements.txt
 
 ## Quick Start
 
+> 📖 **Looking for a detailed step-by-step setup guide?**  
+> Check out the comprehensive **[User Manual (MANUAL.md)](MANUAL.md)** for connection troubleshooting, Windows security notes, and advanced features.
+
 1. **Launch the application**:
    - **Portable:** Double-click `DreamDexed-Studio.exe`.
    - **Source:** Run `Main.py` with Python.
 2. In the **Device** dropdown, click **⚙️ Edit Profiles** to create an FTP profile for your Raspberry Pi (IP, user, password; defaults: `admin`/`admin`).
-3. Select the profile → the Explorer on the right will connect and load the Pi’s configuration (`minidexed.ini`).
+3. Select the profile and click **FTP Test / Reconnect** → the Explorer on the right will connect and load the Pi’s configuration (`minidexed.ini`).
 4. **Workflow**:
    - Click **1. Import from RPi** – choose which banks to download.
    - Click **2. Convert** – extracts sysex, creates PDF, optionally adds DX7 ROMs.
    - Click **3. Export** – uploads everything back to the RPi and/or syncs with your local Dexed/GitHub folders.
 5. **Performance editing**:
-   - Right‑click an `.ini` file in the Explorer tree and choose **F2** or double‑click to open the editor.
+   - Select an `.ini` file in the Explorer tree and press **F2** or double‑click to open the integrated editor.
    - Double‑right‑click to send a Program Change to the Pi.
 
 ## MIDI Button Navigation
