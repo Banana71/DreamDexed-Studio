@@ -7,8 +7,8 @@ from .constants import (SCALE_FACTOR, COLOR_BG, COLOR_FG, COLOR_BG_BUTTON,
                         COLOR_BG_SELECT, FONT_NORMAL, FONT_SMALL, COLOR_FG_DIM)
 
 # HIER DIE ZENTRALEN VARIABLEN FÜR DEN WORKFLOW
-VERSION = "0.2.8"
-VERSION_DATE = "2026/06/16"
+VERSION = "0.2.10"
+VERSION_DATE = "2026/07/19"
 
 def show_about(parent, base_dir):
     """Open a small info window with logo and version information.
@@ -47,12 +47,22 @@ def show_about(parent, base_dir):
 
     link_frame = tk.Frame(win, bg=COLOR_BG)
     link_frame.pack(pady=10)
+
+    # HERVORGEHOBENER LINK ZUR EIGENEN PROJEKTSEITE (vorrangig, weiße Schrift)
+    lbl_project = tk.Label(link_frame,
+                           text="https://github.com/Banana71/DreamDexed-Studio",
+                           font=FONT_NORMAL, fg=COLOR_FG, bg=COLOR_BG, cursor="hand2")
+    lbl_project.pack(pady=(0, 5))
+    lbl_project.bind("<Button-1>", lambda e: open_url("https://github.com/Banana71/DreamDexed-Studio"))
+
+    # Weitere Links (abgedunkelt)
     lbl1 = tk.Label(link_frame, text="https://github.com/probonopd/MiniDexed",
-                    font=FONT_NORMAL, fg=COLOR_FG_DIM, bg=COLOR_BG, cursor="hand2")
+                    font=FONT_NORMAL, fg="white", bg=COLOR_BG, cursor="hand2")
     lbl1.pack()
     lbl1.bind("<Button-1>", lambda e: open_url("https://github.com/probonopd/MiniDexed"))
+
     lbl2 = tk.Label(link_frame, text="https://github.com/DreamDexed/DreamDexed",
-                    font=FONT_NORMAL, fg=COLOR_FG_DIM, bg=COLOR_BG, cursor="hand2")
+                    font=FONT_NORMAL, fg="white", bg=COLOR_BG, cursor="hand2")
     lbl2.pack()
     lbl2.bind("<Button-1>", lambda e: open_url("https://github.com/DreamDexed/DreamDexed"))
 

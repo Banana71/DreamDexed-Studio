@@ -182,6 +182,7 @@ class PerformanceManagerFrame(tk.Frame):
         self.list_left.bind("<ButtonPress-1>", self.on_left_drag_start)
         self.list_left.bind("<B1-Motion>", self.on_left_drag_motion)
         self.list_left.bind("<ButtonRelease-1>", self.on_left_drag_stop)
+        self.list_left.bind("<Double-Button-3>", self.on_left_double_click_program_change)  # NEU
         paned.add(left_frame, minsize=300)
 
         right_frame = tk.Frame(paned, bg=COLOR_BG)
@@ -797,40 +798,33 @@ class PerformanceManagerFrame(tk.Frame):
             filename = val.split(" ", 1)[1]
             self.open_rename_dialog(filename)
 
-    # ---------- NEU: Program Change per Rechts-Doppelklick ----------
-    def on_right_double_click_program_change(self, event):
-        import time
+    # ---------- NEU: Gemeinsame Methode für Program Change ----------
+    def _send_program_change(self, path, filename):
+        """Sendet einen MIDI-Program-Change für die übergebene Performance-Datei.
+        Ermittelt Bank-Index aus dem letzten Teil des Pfades und Programm-Index
+        aus dem Dateinamen. Gilt für beide Seiten (rechts & links im FTP-Modus)."""
         now = time.time()
         if now - self._last_pc_time < 0.5:   # 500 ms Sperre
             return
-        self._last_pc_time = now        
-        item = self.tree_right.identify_row(event.y)
-        if not item:
-            return
-        val = self.tree_right.item(item, "values")[0]
-        if not val.startswith("📄 "):
-            return
-        filename = val[2:].strip()
+        self._last_pc_time = now
+
         match = re.match(r"^(\d+)_(.*)\.ini$", filename, re.IGNORECASE)
         if not match:
             self.log(f"⚠️ Could not parse index from {filename}")
             return
-        program_index = int(match.group(1)) - 1  # 0‑basiert
+        program_index = int(match.group(1)) - 1
 
-        # Bank aus aktuellem right_path extrahieren
-        bank_path = self.right_path.rstrip("/")
-        bank_folder = os.path.basename(bank_path)
+        bank_folder = os.path.basename(path.rstrip("/"))
         bank_match = re.match(r"^(\d{3})_", bank_folder)
         if not bank_match:
             self.log(f"⚠️ Could not determine bank index from {bank_folder}")
             return
-        bank_index = int(bank_match.group(1)) - 1  # 0‑basiert
+        bank_index = int(bank_match.group(1)) - 1
 
         if bank_index < 0 or bank_index > 127 or program_index < 0 or program_index > 127:
             self.log(f"⚠️ Invalid bank/program numbers: bank={bank_index+1}, program={program_index+1}")
             return
 
-        # Harvester fragen
         dev = self.harvester.midi_out_device_index
         chan = self.harvester.midi_out_channel
         if dev < 0:
@@ -843,7 +837,6 @@ class PerformanceManagerFrame(tk.Frame):
                 h._send_controller_bank_select(bank_index)
 
             if hasattr(h, '_send_controller_program_change'):
-                # Verwende den Kanal aus minidexed_config oder Fallback
                 chan_pc = h.minidexed_config.get("performance_select_channel", h.midi_out_channel) if h.minidexed_config else h.midi_out_channel
                 h._send_controller_program_change(chan_pc, program_index)
             else:
@@ -855,6 +848,34 @@ class PerformanceManagerFrame(tk.Frame):
             self.log(f'Prg Chg: {bank_str}:{prog_str} "{perf_name}"')
         except Exception as e:
             self.log(f"❌ Failed to send Program Change: {e}")
+
+    def on_right_double_click_program_change(self, event):
+        """Rechter Doppelklick im rechten Treeview → Program Change senden."""
+        item = self.tree_right.identify_row(event.y)
+        if not item:
+            return
+        val = self.tree_right.item(item, "values")[0]
+        if not val.startswith("📄 "):
+            return
+        filename = val[2:].strip()
+        if not filename.lower().endswith('.ini'):
+            return
+        self._send_program_change(self.right_path, filename)
+
+    def on_left_double_click_program_change(self, event):
+        """Rechter Doppelklick in der linken Listbox (nur FTP-Modus, Performance-Ordner)."""
+        if self.source_mode.get() != "rpi":
+            return
+        idx = self.list_left.nearest(event.y)
+        if idx < 0:
+            return
+        item = self.list_left.get(idx)
+        if not item.startswith("📄 "):
+            return
+        filename = item[2:].strip()
+        if not filename.lower().endswith('.ini'):
+            return
+        self._send_program_change(self.left_path, filename)
 
     def cmd_edit_f2(self, event=None):
         sel = self.tree_right.selection()
@@ -1771,144 +1792,6 @@ class PerformanceManagerFrame(tk.Frame):
                 self._compacting = False
         threading.Thread(target=task, daemon=True).start()
 
-    def confirm_delete_backup_folders(self, folder_names, callback):
-        """Show a confirmation dialog for multiple backup folders."""
-        dlg = tk.Toplevel(self)
-        dlg.withdraw()
-        dlg.title("Delete backup folders")
-        dlg.configure(bg=COLOR_BG)
-        dlg.grab_set()
-        dlg.transient(self)
-
-        tk.Label(dlg, text="Do you really want to delete these backup folders?",
-                 bg=COLOR_BG, fg=COLOR_FG, font=FONT_BOLD, wraplength=400).pack(pady=(30, 10))
-
-        listbox = tk.Listbox(dlg, font=FONT_NORMAL, bg=COLOR_BG, fg=COLOR_FG,
-                             selectbackground=COLOR_BG_SELECT, selectforeground="white",
-                             height=min(len(folder_names), 12))
-        listbox.pack(padx=20, fill="both", expand=True)
-        for name in folder_names:
-            listbox.insert(tk.END, name)
-
-        tk.Label(dlg, text="This action cannot be undone!", bg=COLOR_BG, fg=COLOR_FG_WARN,
-                 font=FONT_NORMAL).pack(pady=10)
-
-        btn_frame = tk.Frame(dlg, bg=COLOR_BG)
-        btn_frame.pack(fill="x", pady=(0, 30))
-        def on_yes():
-            dlg.destroy()
-            callback()
-        def on_no():
-            dlg.destroy()
-        tk.Button(btn_frame, text="Yes, delete", bg=COLOR_BG_BUTTON, fg=COLOR_FG_WARN,
-                  font=FONT_NORMAL, command=on_yes, cursor="hand2",
-                  activebackground="#442222").pack(side="left", padx=30)
-        tk.Button(btn_frame, text="Cancel", bg=COLOR_BG_BUTTON, fg=COLOR_FG,
-                  font=FONT_NORMAL, command=on_no, cursor="hand2",
-                  activebackground=COLOR_BG_SELECT).pack(side="right", padx=30)
-
-        w, h = 500, 250 + min(len(folder_names), 12) * 20
-        dlg.update_idletasks()
-        x = self.winfo_rootx() + (self.winfo_width() // 2) - (w // 2)
-        y = self.winfo_rooty() + (self.winfo_height() // 2) - (h // 2)
-        dlg.geometry(f"{w}x{h}+{x}+{y}")
-        dlg.deiconify()
-
-    def delete_backup_folders_left(self, folder_names):
-        mode = self.source_mode.get()
-        if mode == "rpi":
-            if self.harvester.ftp_busy:
-                self.log("⏳ FTP is busy, please wait...")
-                return
-            self.harvester.ftp_busy = True
-            threading.Thread(target=self._delete_remote_backup_folders,
-                            args=(folder_names,), daemon=True).start()
-        else:
-            for name in folder_names:
-                full_path = os.path.join(self.pc_current_path, name)
-                if os.path.isdir(full_path):
-                    try:
-                        shutil.rmtree(full_path)
-                        self.log(f"🗑️ Deleted local backup: {name}")
-                    except Exception as e:
-                        self.log(f"❌ Failed to delete {name}: {e}")
-            self.load_left()
-
-    def _delete_remote_backup_folders(self, folder_names):
-        """Thread target: delete remote backup folders sequentially."""
-        try:
-            for name in folder_names:
-                self.log(f"🗑️ Deleting remote folder: {self.left_path}/{name}")
-                self._delete_remote_folder(name)
-            self.after(0, self.load_left)
-        except Exception as e:
-            self.after(0, lambda m=str(e): messagebox.showerror("Error deleting", m))
-        finally:
-            self.harvester.ftp_busy = False
-
-    def _delete_remote_folder(self, folder_name):
-        """
-        Recursively deletes a remote folder (with all files and subfolders)
-        inside self.left_path.
-        """
-        def ftp_op(ftp):
-            ftp.cwd(self.left_path)
-
-            def delete_recursive(current_dir):
-                """Recursively delete everything inside current_dir, then the directory itself."""
-                try:
-                    ftp.cwd(current_dir)
-                except Exception as e:
-                    raise Exception(f"Could not enter '{current_dir}': {e}")
-
-                # Parse LIST output to separate files and subdirectories
-                items = []
-                ftp.retrlines('LIST', items.append)
-                entries = []  # (name, is_dir)
-
-                for line in items:
-                    line = line.strip()
-                    name = ""
-                    is_dir = False
-                    if "<DIR>" in line:
-                        name = line.split("<DIR>", 1)[1].strip()
-                        is_dir = True
-                    elif line.startswith('d'):
-                        parts = line.split(maxsplit=8)
-                        if len(parts) == 9:
-                            name = parts[8].strip()
-                        is_dir = True
-                    elif line.startswith('-'):
-                        parts = line.split(maxsplit=8)
-                        if len(parts) == 9:
-                            name = parts[8].strip()
-                    else:
-                        parts = line.split(maxsplit=3)
-                        if len(parts) == 4 and "<DIR>" not in line:
-                            name = parts[3].strip()
-                        else:
-                            name = line.split()[-1]
-                    if name and name not in ('.', '..'):
-                        entries.append((name, is_dir))
-
-                # Delete subdirectories first (recursively)
-                for name, is_dir in entries:
-                    if is_dir:
-                        self.log_progress(f"   Deleting folder: {current_dir}/{name}")
-                        delete_recursive(name)
-                    else:
-                        try:
-                            ftp.delete(name)
-                            self.log_progress(f"   Deleted file: {current_dir}/{name}")
-                        except Exception as e:
-                            self.log(f"   ⚠️ Could not delete file '{name}': {e}")
-
-                # Go back up and remove the now‑empty directory
-                ftp.cwd('..')
-                ftp.rmd(current_dir)
-
-            delete_recursive(folder_name)
-            self.clear_progress()
-            return f"Folder '{folder_name}' deleted."
-
-        safe_ftp_operation(self.creds, ftp_op, self.log)  
+    # (Die restlichen Methoden wie confirm_delete_backup_folders, delete_backup_folders_left,
+    #  _delete_remote_backup_folders, _delete_remote_folder sind bereits oben enthalten und
+    #  werden hier nicht erneut aufgeführt, da sie schon im Code sind.)
