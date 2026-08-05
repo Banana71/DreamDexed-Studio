@@ -41,8 +41,8 @@ def scaled_font(base_size=9):
 # Farben & Schriften (Retro-Theme)
 # ----------------------------------------------------------------------
 COLOR_BG           = "#221d16"
-COLOR_FG           = "#67fff0"   # "#48e0d0"
-COLOR_FG_DIM       = "#B0E7E2"
+COLOR_FG           = "#48e0d0"   # "#48e0d0"
+COLOR_FG_DIM       = "#B0C1E7"
 COLOR_FG_WARN      = "#F59300"
 COLOR_BG_SELECT    = "#0E8585" 
 COLOR_BG_BUTTON    = "#1a1a1a"
@@ -51,6 +51,7 @@ COLOR_BG_TOOLTIP   = "#237070"
 COLOR_WORKFLOW     = "#2a4a3f"
 COLOR_FG_CHORD     = "#FF7B23"
 COLOR_BG_CHORD     = "#42210A"
+COLOR_VELOCITY_BAR = "#FF7B23"  # "#00ffdd"
 COLOR_BG_SLIDER    = "#3F3939"
 FONT_FAMILY        = "Segoe UI"
 

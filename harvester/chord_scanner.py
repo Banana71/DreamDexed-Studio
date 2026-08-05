@@ -228,10 +228,11 @@ class ChordScanner:
             return num, name
         return num, None
 
-    def __init__(self, root, callback, device_index=0):
+    def __init__(self, root, callback, device_index=0, velocity_queue=None):
         self.root = root
         self.callback = callback
         self.device_index = device_index
+        self.velocity_queue = velocity_queue          # <-- NEU
         self.hmidi = None
         self.device_name = None
         self._active_notes = {}
@@ -282,7 +283,7 @@ class ChordScanner:
 
     def _start_poller(self):
         self._poll_queue()
-        self._poll_id = self.root.after(20, self._start_poller)
+        self._poll_id = self.root.after(15, self._start_poller)
 
     def _poll_queue(self):
         has_signal = False
@@ -298,7 +299,7 @@ class ChordScanner:
     def _reset_debounce_timer(self):
         if self._debounce_timer:
             self.root.after_cancel(self._debounce_timer)
-        self._debounce_timer = self.root.after(80, self._evaluate)
+        self._debounce_timer = self.root.after(50, self._evaluate)
 
     def _on_midi_event(self, hMidiIn, wMsg, dwInstance, dwParam1, dwParam2):
         if wMsg != 0x3C3:
@@ -313,6 +314,12 @@ class ChordScanner:
         if status & 0xF0 == 0x90 and velocity > 0:
             with self._lock:
                 self._active_notes[note] = velocity
+            # --- NEU: Velocity an das Histogramm weitergeben ---
+            if self.velocity_queue is not None:
+                try:
+                    self.velocity_queue.put_nowait(velocity)
+                except queue.Full:
+                    pass
         elif status & 0xF0 == 0x80 or (status & 0xF0 == 0x90 and velocity == 0):
             with self._lock:
                 self._active_notes.pop(note, None)

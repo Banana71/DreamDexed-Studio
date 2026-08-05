@@ -8,6 +8,7 @@ from PIL import Image, ImageTk
 import configparser
 import json
 import os
+import queue
 import threading
 import shutil
 import subprocess
@@ -34,6 +35,7 @@ from harvester.midi_utils import list_midi_out_devices, send_bank_and_program, w
 from harvester.minidexed_ini import parse_minidexed_ini
 from harvester.midi_utils import list_midi_out_devices, send_bank_and_program, winmm, send_sysex
 from harvester.about_dialog import show_about
+from harvester.velocity_histogram_widget import VelocityHistogramWidget
 
 if getattr(sys, 'frozen', False):
     BASE_DIR = os.path.dirname(sys.executable)
@@ -129,6 +131,7 @@ class Harvester(tk.Tk):
         self.midi_out_channel = self.config.getint('MIDI', 'out_channel', fallback=1)
         self.chord_scanner = None
         self.chord_timer = None
+        self.velocity_queue = queue.Queue()      # <-- NEU
         # --- NEW: miniDexed configuration from Pi ---
         self.minidexed_config = None
         self.btn_midi_config = None
@@ -745,14 +748,23 @@ class Harvester(tk.Tk):
         lbl_log = tk.Label(header_frame, text="Log", font=FONT_BOLD, bg=COLOR_BG, fg=COLOR_FG, anchor="w")
         lbl_log.pack(side="left", anchor="s")
 
+        # --- Velocity Histogramm (links vom Chord Scanner) ---
+        self.velocity_histogram = VelocityHistogramWidget(
+            header_frame,
+            velocity_queue=self.velocity_queue,
+            bg=COLOR_BG_CHORD 
+        )
+        self.velocity_histogram.pack(side="left", padx=(16, 0))
+        # --------------------------------------------------------
+
         # Akkord-Anzeige 
-        chord_frame = tk.Frame(header_frame, bg=COLOR_BG_CHORD,
+        self.chord_frame = tk.Frame(header_frame, bg=COLOR_BG_CHORD,
                                highlightthickness=1) 
-        chord_frame.pack(side="left", padx=164)  
+        self.chord_frame.pack(side="left", padx=(20, 16)) 
 
         chord_font = (CHORD_FONT_FAMILY, int(CHORD_FONT_SIZE * self.scale), "bold")
         self.chord_label = tk.Label(
-            chord_frame,
+            self.chord_frame,
             text="",
             font=chord_font,
             fg=COLOR_FG_CHORD,
@@ -767,6 +779,7 @@ class Harvester(tk.Tk):
                                                   bg=COLOR_BG, fg=COLOR_FG, font=FONT_NORMAL)
         self.log_area.pack(fill="both", expand=True, padx=5, pady=5)
 
+        self.after(100, self._sync_histogram_size)
         self.after(100, self.start_chord_scanner)
 
     # -------------------------------------------------------------------------
@@ -1335,7 +1348,12 @@ class Harvester(tk.Tk):
         if self.midi_device_index < 0:
             self.log_message("Chord Scanner: Disabled by user.")
             return
-        self.chord_scanner = ChordScanner(self, self.update_chord_display, device_index=self.midi_device_index)
+        self.chord_scanner = ChordScanner(
+            self,
+            self.update_chord_display,
+            device_index=self.midi_device_index,
+            velocity_queue=self.velocity_queue
+        )
         self.chord_scanner.start()
         device = self.chord_scanner.get_device_name()
         if device:
@@ -1809,7 +1827,16 @@ class Harvester(tk.Tk):
                 send_sysex(self.midi_out_device_index, sysex)
             except Exception as e:
                 self.log_message(f"Master Volume SysEx failed: {e}")
+    def _sync_histogram_size(self):
+        """Passt die Größe des Velocity‑Histogramms an den Chord‑Scanner an."""
+        if not hasattr(self, 'chord_frame') or not hasattr(self, 'velocity_histogram'):
+            return
+        self.chord_frame.update_idletasks()
+        chord_width = self.chord_frame.winfo_reqwidth()
+        chord_height = self.chord_frame.winfo_reqheight()
 
+        if chord_width > 10 and chord_height > 10:
+            self.velocity_histogram.set_dimensions(chord_width, chord_height)    
     # -------------------------------------------------------------------------
     # Cleanup on exit
     # -------------------------------------------------------------------------
