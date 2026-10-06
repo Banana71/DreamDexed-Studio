@@ -15,7 +15,6 @@ from harvester.ftp_utils import safe_ftp_operation
 from .perf2sheet import parse_voice_155, generate_datasheet, sanitize_filename
 from harvester.ini_utils import hex_to_text, text_to_hex, parse_ini_for_voices, rebuild_ini_line
 from harvester.rename_dialog import RenameDialog
-from harvester.midi_utils import send_bank_and_program
 from harvester.minidexed_ini import parse_minidexed_ini
 
 class PerformanceManagerFrame(tk.Frame):
@@ -800,11 +799,11 @@ class PerformanceManagerFrame(tk.Frame):
 
     # ---------- NEU: Gemeinsame Methode für Program Change ----------
     def _send_program_change(self, path, filename):
-        """Sendet einen MIDI-Program-Change für die übergebene Performance-Datei.
-        Ermittelt Bank-Index aus dem letzten Teil des Pfades und Programm-Index
-        aus dem Dateinamen. Gilt für beide Seiten (rechts & links im FTP-Modus)."""
+        """Send a MIDI Program Change for the given performance file.
+        Bank index is derived from the last path segment, program index
+        from the filename prefix. Works on both sides (right & left in FTP mode)."""
         now = time.time()
-        if now - self._last_pc_time < 0.5:   # 500 ms Sperre
+        if now - self._last_pc_time < 0.5:   # 500 ms debounce
             return
         self._last_pc_time = now
 
@@ -822,32 +821,24 @@ class PerformanceManagerFrame(tk.Frame):
         bank_index = int(bank_match.group(1)) - 1
 
         if bank_index < 0 or bank_index > 127 or program_index < 0 or program_index > 127:
-            self.log(f"⚠️ Invalid bank/program numbers: bank={bank_index+1}, program={program_index+1}")
+            self.log(f"⚠️ Invalid bank/program numbers: "
+                    f"bank={bank_index+1}, program={program_index+1}")
             return
 
-        dev = self.harvester.midi_out_device_index
-        chan = self.harvester.midi_out_channel
-        if dev < 0:
-            self.log("🔇 MIDI Out is disabled (Kein MIDI).")
+        if self.harvester.midi_out_device_index < 0:
+            self.log("🔇 MIDI Out is disabled (No MIDI).")
             return
 
-        try:
-            h = self.harvester
-            if hasattr(h, '_send_controller_bank_select'):
-                h._send_controller_bank_select(bank_index)
-
-            if hasattr(h, '_send_controller_program_change'):
-                chan_pc = h.minidexed_config.get("performance_select_channel", h.midi_out_channel) if h.minidexed_config else h.midi_out_channel
-                h._send_controller_program_change(chan_pc, program_index)
-            else:
-                send_bank_and_program(dev, chan, bank_index, program_index)
-
+        success, message = self.harvester.send_performance_program_change(
+            bank_index, program_index
+        )
+        if success:
             bank_str = f"{bank_index+1:03d}"
             prog_str = f"{program_index+1:03d}"
             perf_name = match.group(2)
             self.log(f'Prg Chg: {bank_str}:{prog_str} "{perf_name}"')
-        except Exception as e:
-            self.log(f"❌ Failed to send Program Change: {e}")
+        else:
+            self.log(f"❌ Failed to send Program Change: {message}")
 
     def on_right_double_click_program_change(self, event):
         """Rechter Doppelklick im rechten Treeview → Program Change senden."""

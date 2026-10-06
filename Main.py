@@ -45,65 +45,9 @@ CONFIG_INI = os.path.join(BASE_DIR, 'config.ini')
 CONFIG_JSON = os.path.join(BASE_DIR, 'config.json')
 EXPORT_DIR = os.path.join(BASE_DIR, 'Export')
 
-# =============================================================================
-# --- HILFSFUNKTIONEN ---
-# =============================================================================
-
-def hex_to_text(hex_string):
-    try:
-        bytes_list = hex_string.strip().split()
-        if len(bytes_list) < 11:
-            return "UNKNOWN"
-        name_bytes = bytes_list[-11:-1]
-        chars = [chr(int(b, 16)) for b in name_bytes]
-        return "".join(chars).rstrip('\x00')
-    except:
-        return "ERROR"
-
-def text_to_hex(text):
-    text = text.ljust(10)[:10]
-    hex_bytes = [f"{ord(char):02X}" for char in text]
-    return " ".join(hex_bytes)
-
-def parse_ini_for_voices(lines):
-    import re
-    tg_map = {i: {'hex': '', 'channel': 1, 'line_idx': -1, 'link': 0} for i in range(1, 9)}
-    regex_link = re.compile(r"^TGLink(\d+)=(\d+)")
-    regex_ch = re.compile(r"^MIDIChannel(\d+)=(\d+)")
-    regex_voice = re.compile(r"^VoiceData(\d+)=(.*)")
-
-    for idx, line in enumerate(lines):
-        line = line.strip()
-        m_link = regex_link.match(line)
-        if m_link:
-            tg = int(m_link.group(1))
-            if 1 <= tg <= 8:
-                tg_map[tg]['link'] = int(m_link.group(2))
-        m_ch = regex_ch.match(line)
-        if m_ch:
-            tg = int(m_ch.group(1))
-            if 1 <= tg <= 8:
-                tg_map[tg]['channel'] = int(m_ch.group(2))
-        m_voice = regex_voice.match(line)
-        if m_voice:
-            tg = int(m_voice.group(1))
-            if 1 <= tg <= 8:
-                tg_map[tg]['hex'] = m_voice.group(2)
-                tg_map[tg]['line_idx'] = idx
-    return tg_map
-
-def rebuild_ini_line(original_line, new_hex):
-    parts = original_line.strip().split('=')
-    if len(parts) != 2:
-        return original_line
-    value_part = parts[1].strip().split()
-    if len(value_part) < 11:
-        return original_line
-    new_value = " ".join(value_part[:-11]) + " " + new_hex + " " + value_part[-1]
-    return f"{parts[0]}={new_value}\n"
 
 # =============================================================================
-# --- HAUPTANWENDUNG (Harvester) ---
+# --- Mainact (Harvester) ---
 # =============================================================================
 class Harvester(tk.Tk):
     def __init__(self):
@@ -440,13 +384,13 @@ class Harvester(tk.Tk):
             orient=tk.HORIZONTAL,
             variable=self.master_volume,
             command=self._on_master_volume_change,
-            showvalue=False,                     # <-- keine aufklappende Zahl
+            showvalue=False,                     
             bg=COLOR_BG_SLIDER,
             fg=COLOR_FG,
             troughcolor=COLOR_BG_BUTTON,
             highlightthickness=0,
             length=int(250 * SCALE_FACTOR),
-            width=25,                            # <-- schmaler, passend zur Buttonhöhe
+            width=25,                            
             sliderlength=int(30 * SCALE_FACTOR)
         )
         self.volume_slider.pack(side="left", fill="x", expand=True, padx=(20, 10), pady=2)
@@ -462,7 +406,7 @@ class Harvester(tk.Tk):
         )
         self.lbl_volume_value.pack(side="left", padx=(0, 10))
 
-        # Logo rechts in der Toggle-Leiste
+        # Logo 
         logo_path = os.path.join(BASE_DIR, "harvester", "logo.png")
         if os.path.exists(logo_path):
             pil_image = Image.open(logo_path)
@@ -576,13 +520,13 @@ class Harvester(tk.Tk):
         self.combo_midi = ttk.Combobox(row_midi, state="readonly", width=int(20 * self.scale))
         self.combo_midi.pack(side="left", padx=(5,0))
         self.combo_midi.bind("<<ComboboxSelected>>", self.on_midi_device_changed)
-        ToolTip(self.combo_midi, "Select MIDI input device for chord detection.\n'Kein MIDI' disables the scanner.")
+        ToolTip(self.combo_midi, "Select MIDI input device for chord detection.\n'No MIDI' disables the scanner.")
 
         tk.Label(row_midi, text="MIDI Out:", font=FONT_BOLD, width=9, anchor="w", bg=COLOR_BG, fg=COLOR_FG).pack(side="left", padx=(15,0))
         self.combo_midi_out = ttk.Combobox(row_midi, state="readonly", width=int(20 * self.scale))
         self.combo_midi_out.pack(side="left", padx=(5,0))
         self.combo_midi_out.bind("<<ComboboxSelected>>", self.on_midi_out_changed)
-        ToolTip(self.combo_midi_out, "Select MIDI output device for program change.\n'Kein MIDI' disables sending.")
+        ToolTip(self.combo_midi_out, "Select MIDI output device for program change.\n'No MIDI' disables sending.")
 
         tk.Label(row_midi, text="Chn:", font=FONT_BOLD, anchor="w", bg=COLOR_BG, fg=COLOR_FG).pack(side="left", padx=(15,0))
         self.lbl_perf_channel = tk.Label(row_midi, text="1", font=FONT_NORMAL,
@@ -1276,16 +1220,16 @@ class Harvester(tk.Tk):
 
     # --- MIDI-Geräteauswahl und Chord Scanner ---
     def refresh_midi_devices(self):
-        """Aktualisiert MIDI-In und MIDI-Out Comboboxen."""
+        """Refresh MIDI-In and MIDI-Out comboboxes."""
         # MIDI In
         devices = ChordScanner.list_devices()
-        values_in = ["Kein MIDI"] + devices
+        values_in = ["No MIDI"] + devices
         self.combo_midi['values'] = values_in
         idx = self.midi_device_index
         if idx < 0 or idx >= len(devices):
-            self.combo_midi.set("Kein MIDI")
+            self.combo_midi.set("No MIDI")
             if idx != -1:
-                self.log_message(f"MIDI-In device index {idx} not available – set to 'Kein MIDI'.")
+                self.log_message(f"MIDI-In device index {idx} not available – set to 'No MIDI'.")
                 self.midi_device_index = -1
                 self.save_config()
         else:
@@ -1293,13 +1237,13 @@ class Harvester(tk.Tk):
 
         # MIDI Out
         out_devices = list_midi_out_devices()
-        values_out = ["Kein MIDI"] + out_devices
+        values_out = ["No MIDI"] + out_devices
         self.combo_midi_out['values'] = values_out
         out_idx = self.midi_out_device_index
         if out_idx < 0 or out_idx >= len(out_devices):
-            self.combo_midi_out.set("Kein MIDI")
+            self.combo_midi_out.set("No MIDI")
             if out_idx != -1:
-                self.log_message(f"MIDI-Out device index {out_idx} not available – set to 'Kein MIDI'.")
+                self.log_message(f"MIDI-Out device index {out_idx} not available – set to 'No MIDI'.")
                 self.midi_out_device_index = -1
                 self.save_config()
         else:
@@ -1307,7 +1251,7 @@ class Harvester(tk.Tk):
 
     def on_midi_device_changed(self, event=None):
         selection = self.combo_midi.get()
-        if selection == "Kein MIDI":
+        if selection == "No MIDI":
             new_index = -1
         else:
             devices = ChordScanner.list_devices()
@@ -1328,7 +1272,7 @@ class Harvester(tk.Tk):
 
     def on_midi_out_changed(self, event=None):
         selection = self.combo_midi_out.get()
-        if selection == "Kein MIDI":
+        if selection == "No MIDI":
             new_index = -1
         else:
             devices = list_midi_out_devices()
@@ -1514,7 +1458,7 @@ class Harvester(tk.Tk):
     def _apply_minidexed_config(self, config):
         self.minidexed_config = config
         if not config:
-            self.log_message("MiniDexed configuration not available.")
+            self.log_message("miniDexed configuration not available.")
         self._load_midi_button_mapping()
         self._update_midi_nav_ui()
 
@@ -1806,6 +1750,51 @@ class Harvester(tk.Tk):
             winmm.midiOutShortMsg(self.midi_handle, cc_status | (32 << 8) | (lsb << 16))
         except Exception as e:
             self.log_message(f"Bank Select error: {e}")
+
+    def send_performance_program_change(self, bank, program):
+        """Send Bank Select + Program Change to the configured MIDI Out device.
+
+        Works regardless of whether the button-navigation MIDI handle is open:
+        - If navigation is active (self.midi_handle is not None), reuses it.
+        - Otherwise opens a short-lived handle via send_bank_and_program().
+
+        Channel: prefers miniDexed's PerformanceSelectChannel if set (>0),
+        falls back to the user-configured midi_out_channel otherwise.
+
+        Returns (success: bool, message: str).
+        """
+        if self.midi_out_device_index < 0:
+            return False, "MIDI Out is disabled (No MIDI)."
+
+        # --- Determine channel ---
+        chan = self.midi_out_channel
+        if self.minidexed_config:
+            psc = self.minidexed_config.get("performance_select_channel", 0)
+            if psc > 0:
+                chan = psc
+
+        # --- Fast path: reuse open navigation handle ---
+        if self.midi_handle is not None:
+            try:
+                msb = (bank >> 7) & 0x7F
+                lsb = bank & 0x7F
+                cc_status = 0xB0 | (chan - 1)
+                winmm.midiOutShortMsg(self.midi_handle,
+                                    cc_status | (0 << 8) | (msb << 16))
+                winmm.midiOutShortMsg(self.midi_handle,
+                                    cc_status | (32 << 8) | (lsb << 16))
+                winmm.midiOutShortMsg(self.midi_handle,
+                                    (0xC0 | (chan - 1)) | (program << 8))
+                return True, f"ch={chan} bank={bank} prog={program}"
+            except Exception as e:
+                return False, str(e)
+
+        # --- Slow path: no handle open, use helper (opens/closes its own) ---
+        try:
+            send_bank_and_program(self.midi_out_device_index, chan, bank, program)
+            return True, f"ch={chan} bank={bank} prog={program}"
+        except Exception as e:
+            return False, str(e)            
 
     def _on_master_volume_change(self, value):
         """

@@ -14,6 +14,7 @@ from .Perf2syx import single_to_bank128, yamaha_checksum, INIT_VOICE_128, SYX_HD
 from .mixer_dialog import MixerPanel
 from harvester.widgets import ToolTip
 
+
 class RenameDialog(tk.Toplevel):
     def __init__(self, parent, ftp_creds, remote_dir, filename, refresh_callback, harvester):
         super().__init__(parent)
@@ -34,8 +35,8 @@ class RenameDialog(tk.Toplevel):
         parent_y = self.parent.winfo_rooty()
         parent_w = self.parent.winfo_width()
         parent_h = self.parent.winfo_height()
-        x = parent_x + (parent_w // 2) - (w // 2) +6
-        y = parent_y + (parent_h // 2) - (h // 2) +14
+        x = parent_x + (parent_w // 2) - (w // 2) + 6
+        y = parent_y + (parent_h // 2) - (h // 2) + 14
         self.geometry(f"+{x}+{y}")
         self.grab_set()
         self.configure(bg=COLOR_BG)
@@ -51,6 +52,7 @@ class RenameDialog(tk.Toplevel):
         self.fx_slots = None
         self.bus_params = {}
         self.master_fx_details = {}
+        self.is_minidexed_format = False
 
         self.name_entries = {}
         self.entry_ch = {}
@@ -67,7 +69,7 @@ class RenameDialog(tk.Toplevel):
         self.load_remote_file()
 
     # -----------------------------------------------------------------
-    # Laden & Parsen (unverändert)
+    # Laden & Parsen
     # -----------------------------------------------------------------
     def load_remote_file(self):
         def task():
@@ -140,7 +142,11 @@ class RenameDialog(tk.Toplevel):
                 elif key == f"Pan{tg}":
                     tg_data[tg]['pan'] = int(value)
                 elif key == f"FX1Send{tg}":
-                    tg_data[tg]['fx1send'] = int(value)
+                    # DreamDexed source
+                    tg_data[tg]['_fx1_send'] = int(value)
+                elif key == f"ReverbSend{tg}":
+                    # miniDexed source
+                    tg_data[tg]['_reverb_send'] = int(value)
                 elif key == f"FX2Send{tg}":
                     tg_data[tg]['fx2send'] = int(value)
                 elif key == f"NoteLimitLow{tg}":
@@ -192,6 +198,21 @@ class RenameDialog(tk.Toplevel):
         if compressor_enable and not fx_slots.get("MasterFXSlot1"):
             fx_slots["MasterFXSlot1"] = "Compressor"
 
+        # --- Resolve FX1Send (DreamDexed) vs ReverbSend (miniDexed) ---
+        # FX1Send wins if both keys happen to be present (mixed format).
+        is_minidexed_format = False
+        for tg in range(1, 9):
+            if '_fx1_send' in tg_data[tg]:
+                tg_data[tg]['fx1send'] = tg_data[tg].pop('_fx1_send')
+                tg_data[tg]['fx1send_key'] = f"FX1Send{tg}"
+            elif '_reverb_send' in tg_data[tg]:
+                tg_data[tg]['fx1send'] = tg_data[tg].pop('_reverb_send')
+                tg_data[tg]['fx1send_key'] = f"ReverbSend{tg}"
+                is_minidexed_format = True
+            else:
+                tg_data[tg]['fx1send'] = 0
+                tg_data[tg]['fx1send_key'] = None
+
         for tg in range(1, 9):
             if tg in tg_data and 'hex' in tg_data[tg]:
                 tg_data[tg]['name'] = hex_to_text(tg_data[tg]['hex'])
@@ -218,12 +239,17 @@ class RenameDialog(tk.Toplevel):
             comp_enable = tg_data[tg].get('comp_enable', 0)
             tg_data[tg]['comp_active'] = (ch > 0 and comp_enable == 1)
 
-        return tg_data, fx_slots, bus_params, master_fx_details
+        return tg_data, fx_slots, bus_params, master_fx_details, is_minidexed_format
 
     def on_file_loaded(self, lines):
         try:
             self.ini_lines = lines
-            self.tg_data, self.fx_slots, self.bus_params, self.master_fx_details = self.parse_all_parameters(lines)
+            (self.tg_data,
+             self.fx_slots,
+             self.bus_params,
+             self.master_fx_details,
+             self.is_minidexed_format) = self.parse_all_parameters(lines)
+
             self.build_gui()
         except Exception as e:
             import traceback
@@ -238,10 +264,11 @@ class RenameDialog(tk.Toplevel):
         self._build_editor_tab(editor_frame)
 
         mixer_frame = MixerPanel(nb, self.tg_data, self.fx_slots,
-                                self.bus_params, self.master_fx_details)
+                                 self.bus_params, self.master_fx_details)
         nb.add(mixer_frame, text="Mixer")
+
     # -----------------------------------------------------------------
-    # TG‑Editor Tab (unverändert)
+    # TG‑Editor Tab
     # -----------------------------------------------------------------
     def _build_editor_tab(self, parent):
         canvas = tk.Canvas(parent, bg=COLOR_BG, highlightthickness=0)
@@ -265,20 +292,22 @@ class RenameDialog(tk.Toplevel):
         top_frame = tk.Frame(scrollable_frame, bg=COLOR_BG)
         top_frame.pack(fill="x", padx=10, pady=(10, 0))
 
-        tk.Label(top_frame, text="Performance-Name:", **lbl_style).grid(row=0, column=0, sticky="w", padx=(0,5))
+        tk.Label(top_frame, text="Performance-Name:", **lbl_style).grid(row=0, column=0, sticky="w", padx=(0, 5))
         self.entry_perf_name = tk.Entry(top_frame, width=15, **entry_style)
         self.entry_perf_name.insert(0, self.perf_name)
-        self.entry_perf_name.grid(row=0, column=1, sticky="w", padx=(0,20))
+        self.entry_perf_name.grid(row=0, column=1, sticky="w", padx=(0, 20))
 
-        tk.Label(top_frame, text="Watermark 1:", **lbl_style).grid(row=1, column=0, sticky="w", padx=(0,5))
+        tk.Label(top_frame, text="Watermark 1:", **lbl_style).grid(row=1, column=0, sticky="w", padx=(0, 5))
         self.entry_wm1 = tk.Label(top_frame, width=14, bg=COLOR_BG_ENTRY, fg=COLOR_FG,
-                                  text=self.watermark1, anchor="w", relief="sunken", padx=5, pady=2, font=FONT_NORMAL)
-        self.entry_wm1.grid(row=1, column=1, sticky="w", padx=(0,20))
+                                  text=self.watermark1, anchor="w", relief="sunken",
+                                  padx=5, pady=2, font=FONT_NORMAL)
+        self.entry_wm1.grid(row=1, column=1, sticky="w", padx=(0, 20))
 
-        tk.Label(top_frame, text="Watermark 2:", **lbl_style).grid(row=2, column=0, sticky="w", padx=(0,5))
+        tk.Label(top_frame, text="Watermark 2:", **lbl_style).grid(row=2, column=0, sticky="w", padx=(0, 5))
         self.entry_wm2 = tk.Label(top_frame, width=14, bg=COLOR_BG_ENTRY, fg=COLOR_FG,
-                                  text=self.watermark2, anchor="w", relief="sunken", padx=5, pady=2, font=FONT_NORMAL)
-        self.entry_wm2.grid(row=2, column=1, sticky="w", padx=(0,20))
+                                  text=self.watermark2, anchor="w", relief="sunken",
+                                  padx=5, pady=2, font=FONT_NORMAL)
+        self.entry_wm2.grid(row=2, column=1, sticky="w", padx=(0, 20))
 
         apply_btn_style = btn_style.copy()
         apply_btn_style['height'] = 1
@@ -291,6 +320,19 @@ class RenameDialog(tk.Toplevel):
             btn_temp_syx = tk.Button(top_frame, text="set Temp.syx", width=13,
                                      command=self.export_temp_syx, **apply_btn_style)
             btn_temp_syx.grid(row=2, column=3, sticky="w", padx=5)
+
+        # --- Format-Hinweis (nur bei miniDexed-Performances) ---
+        if self.is_minidexed_format:
+            hint = tk.Label(
+                scrollable_frame,
+                text="ℹ️  miniDexed format – FX1 column shows the Reverb send value",
+                bg=COLOR_BG,
+                fg=COLOR_FG_DIM,
+                font=FONT_SMALL,
+                anchor="w",
+                justify="left"
+            )
+            hint.pack(fill="x", padx=12, pady=(6, 0))
 
         sep = tk.Frame(scrollable_frame, height=2, bg=COLOR_FG)
         sep.pack(fill="x", padx=10, pady=10)
@@ -308,7 +350,8 @@ class RenameDialog(tk.Toplevel):
         headers = ["", "Name", "Bank/\nVoice", "Ch", "Vol", "PAN", "FX1\nSend", "FX2\nSend",
                    "Det.", "Cutoff", "Res.", "Note\nLow", "Note\nHigh", "TG\nLink", "Sheet"]
         for col, text in enumerate(headers):
-            if text == "": continue
+            if text == "":
+                continue
             lbl = tk.Label(table_frame, text=text, **lbl_style, anchor="center", justify="center",
                            width=col_widths.get(col, 6))
             lbl.grid(row=0, column=col, padx=1, pady=1, sticky="nsew")
@@ -329,7 +372,8 @@ class RenameDialog(tk.Toplevel):
             bank = data.get('bank', 0)
             voice = data.get('voice', 0)
             bank_voice_text = f"{bank + 1:03d}:{voice:02d}" if ch > 0 else "---:--"
-            lbl_bv = tk.Label(table_frame, text=bank_voice_text, **lbl_style, anchor="center", width=col_widths[2])
+            lbl_bv = tk.Label(table_frame, text=bank_voice_text, **lbl_style,
+                              anchor="center", width=col_widths[2])
             lbl_bv.grid(row=row, column=2, padx=1, pady=1)
 
             placeholder = "-" if ch == 0 else ""
@@ -385,11 +429,15 @@ class RenameDialog(tk.Toplevel):
             self.entry_notehigh[tg] = entry_notehigh
 
             tglink_val = data.get('tglink', 0)
-            if ch == 0: tglink_display = "-"
+            if ch == 0:
+                tglink_display = "-"
             else:
-                if tglink_val == 0: tglink_display = "-"
-                elif 1 <= tglink_val <= 4: tglink_display = chr(ord('A') + tglink_val - 1)
-                else: tglink_display = str(tglink_val)
+                if tglink_val == 0:
+                    tglink_display = "-"
+                elif 1 <= tglink_val <= 4:
+                    tglink_display = chr(ord('A') + tglink_val - 1)
+                else:
+                    tglink_display = str(tglink_val)
             entry_tglink = tk.Entry(table_frame, width=col_widths[13], **entry_style)
             entry_tglink.insert(0, tglink_display)
             entry_tglink.grid(row=row, column=13, padx=1, pady=1)
@@ -408,8 +456,8 @@ class RenameDialog(tk.Toplevel):
         btn_save = tk.Button(btn_frame, text=" Save ", command=self.save_changes, **btn_style)
         btn_save.pack(side="left", padx=5)
         btn_copy = tk.Button(btn_frame, text=" Copy ", command=self.copy_to_share, **btn_style)
-        btn_copy.pack(side="left", padx=5)   
-        ToolTip(btn_copy, "Copy this performance to the local ´./performance/share´ folder")             
+        btn_copy.pack(side="left", padx=5)
+        ToolTip(btn_copy, "Copy this performance to the local ´./performance/share´ folder")
         btn_cancel = tk.Button(btn_frame, text="Cancel", command=self.destroy, **btn_style)
         btn_cancel.pack(side="left", padx=5)
 
@@ -578,7 +626,7 @@ class RenameDialog(tk.Toplevel):
         if not new_perf_name:
             new_perf_name = "Unnamed"
 
-        old_channels = {tg: self.tg_data.get(tg, {}).get('channel', 0) for tg in range(1,9)}
+        old_channels = {tg: self.tg_data.get(tg, {}).get('channel', 0) for tg in range(1, 9)}
 
         new_params = {}
         for tg in range(1, 9):
@@ -635,6 +683,12 @@ class RenameDialog(tk.Toplevel):
                     tglink_val = 0
             new_params[tg]['tglink'] = tglink_val
 
+            # Remember which INI key carries the FX1 value for this TG
+            #   DreamDexed: "FX1Send{tg}"
+            #   miniDexed : "ReverbSend{tg}"
+            #   neither   : None → value cannot be written back
+            new_params[tg]['fx1send_key'] = self.tg_data.get(tg, {}).get('fx1send_key')
+
         new_lines = []
         for line in self.ini_lines:
             original_line = line
@@ -647,11 +701,18 @@ class RenameDialog(tk.Toplevel):
                     new_lines.append(new_line)
                     found = True
                     break
+
+                # --- FX1Send / ReverbSend: dynamic key per TG ---
+                fx1_key = new_params[tg].get('fx1send_key')
+                if fx1_key and line.startswith(fx1_key + "="):
+                    new_lines.append(f"{fx1_key}={new_params[tg]['fx1send']}\n")
+                    found = True
+                    break
+
                 for attr, key_pattern in [
                     ('channel', f"MIDIChannel{tg}"),
                     ('volume', f"Volume{tg}"),
                     ('pan', f"Pan{tg}"),
-                    ('fx1send', f"FX1Send{tg}"),
                     ('fx2send', f"FX2Send{tg}"),
                     ('detune', f"Detune{tg}"),
                     ('cutoff', f"Cutoff{tg}"),
